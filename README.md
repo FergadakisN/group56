@@ -39,6 +39,8 @@ In addition, we will train and evaluate pretrained ResNet architectures, such as
 
 All models will be evaluated using the same metrics (e.g., accuracy, precision, recall, and F1-score) and identical data splits to ensure a controlled and meaningful comparison.
 
+Note: Running dvc pull for the first time will open a browser tab for Google authentication. Please sign in with any Google account to access the public data folder."
+
 ## Project structure
 
 The directory structure of the project looks like this:
