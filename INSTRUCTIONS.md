@@ -19,7 +19,7 @@
 
 * **Tools:** `Cookiecutter`, `Git`, `Virtual Environment`.
 * **Tasks:**
-  * Initialize repository using the DTU MLOps template:
+  * Initialize repository using the DTU MLOps template: 
         `cookiecutter https://github.com/SkafteNicki/mlops-template`
   * Create a clean virtual environment and `requirements.txt` (or `pyproject.toml`).
   * **Data Organization:**
