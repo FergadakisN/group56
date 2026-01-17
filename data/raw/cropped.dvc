@@ -1,0 +1,6 @@
+outs:
+- md5: 27caf7608645fad84645e11c1056fe4c.dir
+  size: 606617020
+  nfiles: 4415
+  hash: md5
+  path: cropped
