@@ -49,6 +49,9 @@ def split_dataset_by_class(
         raise FileNotFoundError(f"Raw directory not found: {raw_path}")
 
     output_path = Path(output_dir)
+    if output_path.exists():
+        shutil.rmtree(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
     rng = random.Random(seed)
 
     class_to_images: dict[str, list[Path]] = defaultdict(list)
