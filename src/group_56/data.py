@@ -5,6 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
 
+import pandas as pd
 import typer
 from torch.utils.data import Dataset
 
@@ -38,7 +39,12 @@ def split_dataset_by_class(
     test_ratio: float = 0.15,
     low_count_threshold: int = 3,
     seed: int = 42,
-) -> dict[str, dict[str, int]]:
+) -> tuple[dict[str, dict[str, int]], pd.DataFrame]:
+    """Split dataset by class and return split counts + split assignment metadata.
+    
+    Returns:
+        Tuple of (split_counts dict, split_assignment DataFrame)
+    """
     total_ratio = train_ratio + validation_ratio + test_ratio
     if abs(total_ratio - 1.0) > 1e-6:
         raise ValueError("Split ratios must sum to 1.0")
@@ -60,9 +66,14 @@ def split_dataset_by_class(
             class_to_images[class_name].append(image_path)
 
     split_counts: dict[str, dict[str, int]] = {}
+    split_records: list[dict] = []
+    
     for class_name, image_paths in class_to_images.items():
         images = sorted(image_paths)
-        if len(images) <= low_count_threshold:
+        is_rare = len(images) <= low_count_threshold
+        reason = "rare_class" if is_rare else "random_split"
+        
+        if is_rare:
             split_map = {"train": images, "validation": [], "test": []}
         else:
             rng.shuffle(images)
@@ -77,16 +88,35 @@ def split_dataset_by_class(
             }
 
         split_counts[class_name] = {}
-        for split_name, split_images in split_map.items():
+        
+        # Create all directories first (one loop)
+        for split_name in split_map:
             target_dir = output_path / split_name / class_name
             target_dir.mkdir(parents=True, exist_ok=True)
-            for image_path in split_images:
-                destination = target_dir / image_path.name
-                if not destination.exists():
-                    shutil.copy2(image_path, destination)
-            split_counts[class_name][split_name] = len(split_images)
+            split_counts[class_name][split_name] = len(split_map[split_name])
+        
+        # Process file copies and metadata in flat list (no nested loops)
+        file_operations = [
+            (target_path, split_name, image_path)
+            for split_name, split_images in split_map.items()
+            for image_path in split_images
+            for target_path in [output_path / split_name / class_name / image_path.name]
+        ]
+        
+        for target_path, split_name, image_path in file_operations:
+            if not target_path.exists():
+                shutil.copy2(image_path, target_path)
+            split_records.append({
+                "image_id": image_path.stem,
+                "species_id": class_name,
+                "split": split_name,
+                "reason": reason,
+                "source_path": str(image_path),
+            })
 
-    return split_counts
+    # Create DataFrame from all records (flattened - no nested iteration)
+    split_df = pd.DataFrame(split_records)
+    return split_counts, split_df
 
 
 def main(   
@@ -96,9 +126,10 @@ def main(
     validation_ratio: float = 0.15,
     test_ratio: float = 0.15,
     low_count_threshold: int = 3,
-    seed: int = 42,) -> None:
-
-    counts = split_dataset_by_class(
+    seed: int = 42,
+) -> None:
+    """Split dataset and save split assignment metadata."""
+    counts, split_df = split_dataset_by_class(
         raw_dir=raw_dir,
         output_dir=output_dir,
         train_ratio=train_ratio,
@@ -108,8 +139,18 @@ def main(
         seed=seed,
     )
 
-    for cls,splits in counts.items():
-        typer.echo(f"{cls}: {splits}")
+    # Save split assignment CSV for reproducibility
+    split_csv_path = Path(output_dir) / "split_assignment.csv"
+    split_df.to_csv(split_csv_path, index=False)
+    typer.echo(f" Saved split assignments to {split_csv_path}")
+    
+    # Print summary statistics
+    typer.echo("\n Split Summary:")
+    for cls, splits in counts.items():
+        typer.echo(f"  {cls}: {splits}")
+    
+    typer.echo(f"\n Total records tracked: {len(split_df)}")
+    typer.echo(split_df["split"].value_counts().to_string())
 
 if __name__ == "__main__":
     typer.run(main)
