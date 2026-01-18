@@ -9,8 +9,8 @@ import torch.nn as nn
 from torch.optim import AdamW
 import typer
 
-from project_name.data import DataConfig, make_dataloaders
-from project_name.models import build_resnet
+from .data import DataConfig, make_dataloaders
+from .model import build_resnet
 
 
 # ============================================================
@@ -60,7 +60,6 @@ def resolve_device(device: str) -> torch.device:
     if device == "mps":
         return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
-    # auto
     if torch.cuda.is_available():
         return torch.device("cuda")
     if torch.backends.mps.is_available():
@@ -73,11 +72,15 @@ def save_checkpoint(
     model: nn.Module,
     class_to_idx: dict,
     epoch: int,
+    arch: str,
+    num_classes: int,
 ):
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
             "epoch": epoch,
+            "arch": arch,
+            "num_classes": num_classes,
             "model_state_dict": model.state_dict(),
             "class_to_idx": class_to_idx,
         },
@@ -86,7 +89,7 @@ def save_checkpoint(
 
 
 # ============================================================
-# TRAINING
+# TRAINING / VALIDATION
 # ============================================================
 
 def train_one_epoch(
@@ -113,6 +116,7 @@ def train_one_epoch(
             with torch.cuda.amp.autocast():
                 logits = model(images)
                 loss = criterion(logits, labels)
+            assert scaler is not None
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -127,9 +131,34 @@ def train_one_epoch(
         correct += (preds == labels).sum().item()
         total += labels.size(0)
 
-    avg_loss = total_loss / total
-    acc = correct / total
-    return avg_loss, acc
+    return total_loss / total, correct / total
+
+
+@torch.no_grad()
+def validate_one_epoch(
+    model: nn.Module,
+    loader: torch.utils.data.DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+):
+    model.eval()
+    total_loss = 0.0
+    correct = 0
+    total = 0
+
+    for images, labels in loader:
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
+
+        logits = model(images)
+        loss = criterion(logits, labels)
+
+        total_loss += loss.item() * labels.size(0)
+        preds = logits.argmax(dim=1)
+        correct += (preds == labels).sum().item()
+        total += labels.size(0)
+
+    return total_loss / total, correct / total
 
 
 # ============================================================
@@ -152,6 +181,8 @@ def main(
     seed: int = 42,
     out_dir: str = "outputs",
     run_name: str = "resnet_run",
+    ckpt_name: str = "last.pt",  
+    save_best: bool = True,      
 ):
     set_seed(seed)
     dev = resolve_device(device)
@@ -164,7 +195,7 @@ def main(
         batch_size=batch_size,
         num_workers=num_workers,
     )
-    train_loader, _, _, class_to_idx = make_dataloaders(data_cfg)
+    train_loader, validation_loader, _, class_to_idx = make_dataloaders(data_cfg)
     num_classes = len(class_to_idx)
 
     # Model
@@ -187,11 +218,15 @@ def main(
 
     # Output
     out_path = Path(out_dir) / run_name
-    last_ckpt = out_path / "last.pt"
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    last_ckpt = out_path / ckpt_name          # now configurable
+    best_ckpt = out_path / "best.pt"          # optional
+    best_val_acc = -1.0
 
     # Training loop
     for epoch in range(1, epochs + 1):
-        loss, acc = train_one_epoch(
+        tr_loss, tr_acc = train_one_epoch(
             model=model,
             loader=train_loader,
             optimizer=optimizer,
@@ -201,19 +236,45 @@ def main(
             use_amp=amp,
         )
 
-        typer.echo(
-            f"Epoch {epoch:02d}/{epochs} | "
-            f"train loss: {loss:.4f} | train acc: {acc:.4f}"
+        va_loss, va_acc = validate_one_epoch(
+            model=model,
+            loader=validation_loader,
+            criterion=criterion,
+            device=dev,
         )
 
+        typer.echo(
+            f"Epoch {epoch:02d}/{epochs} | "
+            f"train loss: {tr_loss:.4f} | train acc: {tr_acc:.4f} | "
+            f"val loss: {va_loss:.4f} | val acc: {va_acc:.4f}"
+        )
+
+        # Always save "last"
         save_checkpoint(
             path=last_ckpt,
             model=model,
             class_to_idx=class_to_idx,
             epoch=epoch,
+            arch=arch,
+            num_classes=num_classes,
         )
 
+        # Optionally save "best"
+        if save_best and va_acc > best_val_acc:
+            best_val_acc = va_acc
+            save_checkpoint(
+                path=best_ckpt,
+                model=model,
+                class_to_idx=class_to_idx,
+                epoch=epoch,
+                arch=arch,
+                num_classes=num_classes,
+            )
+            typer.echo(f"✅ New best checkpoint saved to {best_ckpt} (val acc={best_val_acc:.4f})")
+
     typer.echo(f"Training finished. Last checkpoint saved to {last_ckpt}")
+    if save_best:
+        typer.echo(f"Best checkpoint: {best_ckpt} (val acc={best_val_acc:.4f})")
 
 
 if __name__ == "__main__":
