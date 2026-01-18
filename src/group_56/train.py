@@ -17,6 +17,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import typer
+import wandb
 from model import build_resnet
 from torch.optim import AdamW, Optimizer
 from torch.utils.data import DataLoader
@@ -249,6 +250,40 @@ def main(
     dev = resolve_device(device)
     typer.echo(f"Using device: {dev}")
 
+    # W&B init
+    run = wandb.init(
+        project="group56-fish",   # change to your project name
+        name=run_name,
+        config={
+            "processed_dir": processed_dir,
+            "arch": arch,
+            "epochs": epochs,
+            "lr": lr,
+            "batch_size": batch_size,
+            "weight_decay": weight_decay,
+            "pretrained": pretrained,
+            "freeze_backbone": freeze_backbone,
+            "unfreeze_from": unfreeze_from,
+            "amp": amp,
+            "seed": seed,
+            "ckpt_name": ckpt_name,
+            "save_best": save_best,
+        },
+    )
+
+    cfg = wandb.config
+    lr = cfg.get("lr", lr)
+    batch_size = cfg.get("batch_size", batch_size)
+    weight_decay = cfg.get("weight_decay", weight_decay)
+
+    freeze_backbone = cfg.get("freeze_backbone", freeze_backbone)
+    unfreeze_from = cfg.get("unfreeze_from", unfreeze_from)
+
+    if freeze_backbone:
+        unfreeze_from = None
+
+
+
     # Data Initialization
     data_cfg = DataConfig(
         processed_dir=processed_dir,
@@ -311,6 +346,16 @@ def main(
             f"va_loss: {va_loss:.4f} | va_acc: {va_acc:.4f}"
         )
 
+        wandb.log(
+            {
+                "epoch": epoch,
+                "train/loss": tr_loss,
+                "train/acc": tr_acc,
+                "val/loss": va_loss,
+                "val/acc": va_acc,
+            }
+        )
+
         save_checkpoint(
             path=last_ckpt,
             model=model,
@@ -332,7 +377,11 @@ def main(
             )
             typer.echo(f"New best: {best_ckpt} (acc={best_val_acc:.4f})")
 
+        wandb.summary["best_val_acc"] = best_val_acc
+    wandb.summary["best_epoch"] = epoch
+
     typer.echo("Training process complete.")
+    wandb.finish()
 
 
 if __name__ == "__main__":

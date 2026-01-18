@@ -1,0 +1,25 @@
+program: src/group_56/train.py
+
+command:
+  - ${env}
+  - python
+  - src/group_56/train.py
+
+method: bayes
+metric:
+  name: val/acc
+  goal: maximize
+
+parameters:
+  lr:
+    distribution: log_uniform_values
+    min: 0.00001
+    max: 0.0003
+  weight_decay:
+    values: [0.0, 0.00001, 0.0001, 0.001]
+  batch_size:
+    values: [16, 32, 64]
+  freeze_backbone:
+    values: [true, false]
+  unfreeze_from:
+    values: [null, "layer4"]

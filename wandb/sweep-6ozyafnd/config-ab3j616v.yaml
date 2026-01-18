@@ -1,0 +1,12 @@
+wandb_version: 1
+
+batch_size:
+  value: 16
+freeze_backbone:
+  value: true
+lr:
+  value: 0.00012670193779497363
+unfreeze_from:
+  value: null
+weight_decay:
+  value: 0.001
