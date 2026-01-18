@@ -30,7 +30,6 @@ def _extract_class_name(image_path: Path) -> str:
     class_name, _ = stem.rsplit("_", 1)
     return class_name
 
-
 def split_dataset_by_class(
     raw_dir: str = "data/raw/cropped",
     output_dir: str = "data/processed",
@@ -88,8 +87,6 @@ def split_dataset_by_class(
             split_counts[class_name][split_name] = len(split_images)
 
     return split_counts
-
-
 
 
 def main(   
