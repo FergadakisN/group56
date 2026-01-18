@@ -43,12 +43,4 @@ def build_resnet(
     return model
 
 
-def resnet_preprocess(arch: str = "resnet18"):
-    """Return the torchvision-recommended preprocessing for the chosen weights."""
-    if arch == "resnet18":
-        return models.ResNet18_Weights.DEFAULT.transforms()
-    if arch == "resnet34":
-        return models.ResNet34_Weights.DEFAULT.transforms()
-    if arch == "resnet50":
-        return models.ResNet50_Weights.DEFAULT.transforms()
-    raise ValueError(f"Unknown arch: {arch}")
+
