@@ -90,8 +90,19 @@ def split_dataset_by_class(
         else:
             rng.shuffle(images)
             n_total = len(images)
-            n_train = int(n_total * train_ratio)
-            n_validation = int(n_total * validation_ratio)
+            n_train = max(1, int(n_total * train_ratio))
+            n_validation = max(1, int(n_total * validation_ratio))
+            if n_train + n_validation >= n_total:
+                if n_train > n_validation and n_train > 1:
+                    n_train -= 1
+                elif n_validation > 1:
+                    n_validation -= 1
+            n_test = n_total - n_train - n_validation
+            if n_test == 0:
+                if n_train > 1:
+                    n_train -= 1
+                else:
+                    n_validation -= 1
             split_map = {
                 "train": images[:n_train],
                 "validation": images[n_train : n_train + n_validation],
