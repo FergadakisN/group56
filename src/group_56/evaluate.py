@@ -10,13 +10,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+from typing import Annotated # Add this import at the top
 import torch
 import torch.nn as nn
 import typer
 from torch.utils.data import DataLoader
 
-from data import DataConfig, make_dataloaders
-from model import build_resnet
+from .data import DataConfig, make_dataloaders
+from .model import build_resnet
 
 
 @torch.no_grad()
@@ -110,19 +111,19 @@ def load_checkpoint(ckpt_path: Path, device: torch.device) -> Dict[str, Any]:
 
 
 def main(
-    processed_dir: str = "data/processed",
+processed_dir: str = "data/processed",
     arch: str = "resnet18",
     batch_size: int = 64,
     num_workers: int = 4,
     device: str = "auto",
-    ckpt_path: str = typer.Option(..., help="Path to checkpoint (.pt)"),
-    split: str = typer.Option("test", help="Split to evaluate: test | validation | train"),
+    # Change these two lines:
+    ckpt_path: Annotated[str, typer.Option(help="Path to checkpoint (.pt)")] = "outputs/resnet_run/best.pt",
+    split: Annotated[str, typer.Option(help="Split to evaluate: test | val")] = "test",
     compute_loss: bool = True,
 ) -> None:
-    """
-    CLI Entrypoint: Evaluate a saved checkpoint on a selected dataset split.
-    """
+    # Now Path(ckpt_path) will correctly receive a string
     dev = resolve_device(device)
+    ckpt = load_checkpoint(Path(ckpt_path), dev)
     typer.echo(f"Using device: {dev}")
 
     # Load checkpoint metadata
