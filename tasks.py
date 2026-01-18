@@ -32,13 +32,23 @@ def dev_requirements(ctx: Context) -> None:
 # Project commands
 @task
 def preprocess_data(ctx: Context) -> None:
-    """Preprocess data."""
-    ctx.run(f"python src/{PROJECT_NAME}/data.py data/raw data/processed", echo=True, pty=not WINDOWS)
+    """Preprocess data using the project CLI."""
+    # Use the 'data-split' script we registered in pyproject.toml
+    ctx.run("data-split", echo=True, pty=not WINDOWS)
 
 @task
-def train(ctx: Context) -> None:
-    """Train model."""
-    ctx.run(f"python src/{PROJECT_NAME}/train.py", echo=True, pty=not WINDOWS)
+def train(ctx, epochs=10, batch_size=32):
+    """Run the training script as a module."""
+    # We use -m and dots, and we do NOT include the .py extension
+    cmd = f"python -m group_56.train --epochs {epochs} --batch-size {batch_size}"
+    
+    print(f"--- RUNNING AS MODULE ---")
+    ctx.run(cmd, echo=True, pty=not WINDOWS)
+@task
+def evaluate(ctx: Context, split: str = "test"):
+    """Evaluate the model. Usage: invoke evaluate --split validation"""
+    ctx.run(f"evaluate-model --split {split}", echo=True, pty=not WINDOWS)
+
 
 @task
 def test(ctx: Context) -> None:

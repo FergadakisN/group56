@@ -16,12 +16,13 @@ from typing import Any, Dict, Optional, Tuple
 import numpy as np
 import torch
 import torch.nn as nn
+from typing import Annotated, Optional
 import typer
-from model import build_resnet
+from .model import build_resnet
 from torch.optim import AdamW, Optimizer
 from torch.utils.data import DataLoader
 
-from data import DataConfig, make_dataloaders
+from .data import DataConfig, make_dataloaders
 
 # ============================================================
 # CONFIGS
@@ -233,7 +234,7 @@ def main(
     weight_decay: float = 1e-4,
     pretrained: bool = True,
     freeze_backbone: bool = False,
-    unfreeze_from: Optional[str] = typer.Option(None),
+    unfreeze_from: Annotated[Optional[str], typer.Option(help="Layer name to unfreeze")] = None,
     device: str = "auto",
     amp: bool = True,
     seed: int = 42,

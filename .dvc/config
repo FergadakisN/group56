@@ -4,3 +4,11 @@
     url = gdrive://1_XJpTqudeEgK5pva8lPPqXt50T6Gh902
     gdrive_client_id = 1092682155901-129ns2fbrj2ipa7o91fc0im79quefmoi.apps.googleusercontent.com
     gdrive_client_secret = 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
+
+    #alessandra's id
+ #   gdrive_client_id = 1092682155901-129ns2fbrj2ipa7o91fc0im79quefmoi.apps.googleusercontent.com
+  #  gdrive_client_secret = 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
+
+    #guido's id
+   # gdrive_client_id = 1055693191031-avvhg7bgcmf24it579mvbmko7ehiregm.apps.googleusercontent.com
+   # gdrive_client_secret = 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
