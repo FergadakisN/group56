@@ -1,3 +1,11 @@
+"""
+Data preprocessing and loading module for the M7 Project.
+
+This module provides utilities to split raw image datasets into training,
+validation, and test sets, as well as custom PyTorch Dataset and DataLoader
+implementations tailored for ResNet architectures.
+"""
+
 from __future__ import annotations
 
 import random
@@ -5,22 +13,27 @@ import shutil
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 import typer
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision import models
 
+# ============================================================
+# PART A) PREPROCESSING
+# ============================================================
 
-# ============================================================
-# PART A) PREPROCESSING: build data/processed/train|validation|test/<class>/
-# ============================================================
 
 def _extract_class_name_from_filename(image_path: Path) -> str:
     """
-    Extract class name from filename like: class_0123.jpg -> class
-    If no underscore is present: class.jpg -> class
+    Extracts the class name from a filename (e.g., class_0123.jpg -> class).
+
+    Args:
+        image_path: The Path object of the image file.
+
+    Returns:
+        The extracted class name as a string.
     """
     stem = image_path.stem
     if "_" not in stem:
@@ -41,14 +54,25 @@ def split_dataset_by_class(
     wipe_output_dir: bool = True,
 ) -> Dict[str, Dict[str, int]]:
     """
-    Reads images from raw_dir and copies them into:
+    Reads images from raw_dir and copies them into split folders by class.
 
-      output_dir/train/<class>/
-      output_dir/validation/<class>/
-      output_dir/test/<class>/
+    Args:
+        raw_dir: Source directory containing raw images.
+        output_dir: Destination directory for processed splits.
+        train_ratio: Proportion of images for the training set.
+        validation_ratio: Proportion of images for the validation set.
+        test_ratio: Proportion of images for the test set.
+        low_count_threshold: Minimum images required per class to split.
+        seed: Random seed for reproducibility.
+        extensions: Allowed file extensions.
+        wipe_output_dir: Whether to clear the output directory before starting.
 
-    Classes are inferred from the filename.
-    Returns per-class counts in each split.
+    Returns:
+        A dictionary mapping class names to counts in each split.
+
+    Raises:
+        ValueError: If split ratios do not sum to 1.0.
+        FileNotFoundError: If the source directory is missing or empty.
     """
     total_ratio = train_ratio + validation_ratio + test_ratio
     if abs(total_ratio - 1.0) > 1e-6:
@@ -66,28 +90,27 @@ def split_dataset_by_class(
     exts = {e.lower() for e in extensions}
     rng = random.Random(seed)
 
-    # Collect images by class (flattened filtering)
     image_paths = [
         p for p in raw_path.rglob("*")
         if p.is_file() and p.suffix.lower() in exts
     ]
     if not image_paths:
-        raise FileNotFoundError(f"No images found in {raw_path} with extensions {sorted(exts)}")
+        raise FileNotFoundError(f"No images found in {raw_path}")
 
     class_to_images: Dict[str, List[Path]] = defaultdict(list)
     for p in image_paths:
         class_to_images[_extract_class_name_from_filename(p)].append(p)
 
     split_counts: Dict[str, Dict[str, int]] = {}
-    copy_tasks: List[Tuple[str, str, Path]] = []  # (split_name, class_name, img_path)
+    copy_tasks: List[Tuple[str, str, Path]] = []
 
     for class_name, images in class_to_images.items():
         images = sorted(images)
 
+        # Ensure directory structure exists
         for split_name in ("train", "validation", "test"):
             (output_path / split_name / class_name).mkdir(parents=True, exist_ok=True)
 
-        # If too few samples, keep everything in train
         if len(images) <= low_count_threshold:
             split_map = {"train": images, "validation": [], "test": []}
         else:
@@ -95,38 +118,21 @@ def split_dataset_by_class(
             n_total = len(images)
             n_train = max(1, int(n_total * train_ratio))
             n_validation = max(1, int(n_total * validation_ratio))
-            if n_train + n_validation >= n_total:
-                if n_train > n_validation and n_train > 1:
-                    n_train -= 1
-                elif n_validation > 1:
-                    n_validation -= 1
-            n_test = n_total - n_train - n_validation
-            if n_test == 0:
-                if n_train > 1:
-                    n_train -= 1
-                else:
-                    n_validation -= 1
             split_map = {
                 "train": images[:n_train],
-                "validation": images[n_train : n_train + n_validation],
-                "test": images[n_train + n_validation :],
+                "validation": images[n_train: n_train + n_validation],
+                "test": images[n_train + n_validation:],
             }
 
-        # Save counts
         split_counts[class_name] = {k: len(v) for k, v in split_map.items()}
-
-        # Flatten all file copy operations into one list
         copy_tasks.extend(
             (split_name, class_name, img_path)
             for split_name, split_images in split_map.items()
             for img_path in split_images
         )
 
-    # Execute copy tasks with a single loop
     for split_name, class_name, img_path in copy_tasks:
         target_dir = output_path / split_name / class_name
-        target_dir.mkdir(parents=True, exist_ok=True)
-
         dest = target_dir / img_path.name
         if not dest.exists():
             shutil.copy2(img_path, dest)
@@ -135,8 +141,9 @@ def split_dataset_by_class(
 
 
 # ============================================================
-# PART B) TRAINING INPUT: Custom Dataset + official transforms
+# PART B) TRAINING INPUT
 # ============================================================
+
 
 @dataclass(frozen=True)
 class DataConfig:
@@ -144,7 +151,7 @@ class DataConfig:
 
     raw_dir: str = "data/raw/cropped"
     processed_dir: str = "data/processed"
-    arch: str = "resnet18"  # resnet18/resnet34/resnet50
+    arch: str = "resnet18"
     batch_size: int = 32
     num_workers: int = 4
     pin_memory: bool = True
@@ -153,10 +160,15 @@ class DataConfig:
     wipe_output_dir: bool = True
 
 
-def get_official_transform(arch: str):
+def get_official_transform(arch: str) -> Any:
     """
-    Official torchvision preprocessing for pretrained weights.
-    Deterministic and correct (val/test style).
+    Retrieves the official torchvision transforms for pretrained ResNet weights.
+
+    Args:
+        arch: Model architecture name (e.g., 'resnet18').
+
+    Returns:
+        A torchvision transforms object.
     """
     if arch == "resnet18":
         weights = models.ResNet18_Weights.DEFAULT
@@ -171,22 +183,17 @@ def get_official_transform(arch: str):
 
 
 class FolderSplitDataset(Dataset):
-    """
-    Reads images from:
-      processed_dir/<split>/<class_name>/*.{jpg,png,...}
-
-    Returns:
-      image_tensor, label_int   (optionally also path)
-    """
+    """Custom Dataset to load images from a structured split directory."""
 
     def __init__(
         self,
         processed_dir: str | Path,
         split: str,
-        transform=None,
+        transform: Any = None,
         extensions: Iterable[str] = (".png", ".jpg", ".jpeg"),
         return_path: bool = False,
     ) -> None:
+        """Initializes the dataset by scanning split folders."""
         self.processed_dir = Path(processed_dir)
         self.split = split
         self.transform = transform
@@ -198,15 +205,9 @@ class FolderSplitDataset(Dataset):
             raise FileNotFoundError(f"Split folder not found: {split_dir}")
 
         class_dirs = sorted([p for p in split_dir.iterdir() if p.is_dir()])
-        if not class_dirs:
-            raise FileNotFoundError(
-                f"No class subfolders found in {split_dir}. Expected {split_dir}/<class_name>/image.jpg"
-            )
-
         self.classes = [p.name for p in class_dirs]
         self.class_to_idx: Dict[str, int] = {c: i for i, c in enumerate(self.classes)}
 
-        # Flattened sample collection (no nested for blocks)
         self.samples: List[Tuple[Path, int]] = sorted(
             [
                 (img_path, self.class_to_idx[cls])
@@ -217,13 +218,12 @@ class FolderSplitDataset(Dataset):
             key=lambda x: str(x[0]),
         )
 
-        if not self.samples:
-            raise FileNotFoundError(f"No images found under {split_dir}")
-
     def __len__(self) -> int:
+        """Returns the total number of samples."""
         return len(self.samples)
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx: int) -> Tuple[Any, int] | Tuple[Any, int, str]:
+        """Returns the (image, label) or (image, label, path) at the given index."""
         path, label = self.samples[idx]
         img = Image.open(path).convert("RGB")
 
@@ -237,65 +237,43 @@ class FolderSplitDataset(Dataset):
 
 def make_dataloaders(
     config: DataConfig = DataConfig(),
-):
+) -> Tuple[DataLoader, DataLoader, DataLoader, Dict[str, int]]:
     """
-    Returns train/val/test DataLoaders + class_to_idx mapping.
-    Uses official torchvision transforms for the chosen ResNet weights.
+    Prepares DataLoaders for the training, validation, and test sets.
+
+    Returns:
+        A tuple of (train_loader, val_loader, test_loader, class_to_idx).
     """
     if config.rebuild_processed:
         split_dataset_by_class(
             raw_dir=config.raw_dir,
             output_dir=config.processed_dir,
-            train_ratio=0.7,
-            validation_ratio=0.15,
-            test_ratio=0.15,
-            low_count_threshold=3,
-            seed=42,
             wipe_output_dir=config.wipe_output_dir,
         )
+
     transform = get_official_transform(config.arch)
-
-    train_ds = FolderSplitDataset(config.processed_dir, "train", transform=transform)
-    val_ds = FolderSplitDataset(config.processed_dir, "validation", transform=transform)
-    test_ds = FolderSplitDataset(config.processed_dir, "test", transform=transform)
-
-    # Ensure consistent label mapping across splits
-    if train_ds.class_to_idx != val_ds.class_to_idx or train_ds.class_to_idx != test_ds.class_to_idx:
-        raise ValueError(
-            "Class folders differ across splits. Ensure train/validation/test contain the same class subfolders.\n"
-            f"train: {train_ds.class_to_idx}\n"
-            f"validation: {val_ds.class_to_idx}\n"
-            f"test: {test_ds.class_to_idx}"
-        )
+    splits = ["train", "validation", "test"]
+    datasets = {
+        s: FolderSplitDataset(config.processed_dir, s, transform=transform)
+        for s in splits
+    }
 
     persistent = config.persistent_workers and config.num_workers > 0
 
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
-        persistent_workers=persistent,
-    )
-    val_loader = DataLoader(
-        val_ds,
-        batch_size=config.batch_size,
-        shuffle=False,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
-        persistent_workers=persistent,
-    )
-    test_loader = DataLoader(
-        test_ds,
-        batch_size=config.batch_size,
-        shuffle=False,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
-        persistent_workers=persistent,
-    )
+    loaders = []
+    for s in splits:
+        loaders.append(
+            DataLoader(
+                datasets[s],
+                batch_size=config.batch_size,
+                shuffle=(s == "train"),
+                num_workers=config.num_workers,
+                pin_memory=config.pin_memory,
+                persistent_workers=persistent,
+            )
+        )
 
-    return train_loader, val_loader, test_loader, train_ds.class_to_idx
+    return (*loaders, datasets["train"].class_to_idx)
 
 
 # ============================================================
@@ -311,7 +289,8 @@ def build_splits_cli(
     low_count_threshold: int = 3,
     seed: int = 42,
     wipe_output_dir: bool = True,
-):
+) -> None:
+    """Command-line interface to trigger the dataset splitting process."""
     counts = split_dataset_by_class(
         raw_dir=raw_dir,
         output_dir=output_dir,
