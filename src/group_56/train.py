@@ -270,7 +270,7 @@ def main(
                 arch=arch,
                 num_classes=num_classes,
             )
-            typer.echo(f"✅ New best checkpoint saved to {best_ckpt} (val acc={best_val_acc:.4f})")
+            typer.echo(f"New best checkpoint saved to {best_ckpt} (val acc={best_val_acc:.4f})")
 
     typer.echo(f"Training finished. Last checkpoint saved to {last_ckpt}")
     if save_best:
