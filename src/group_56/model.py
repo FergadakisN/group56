@@ -41,6 +41,3 @@ def build_resnet(
             p.requires_grad = name.startswith(unfreeze_from) or name.startswith("fc")
 
     return model
-
-
-

@@ -84,6 +84,9 @@ def split_dataset_by_class(
     for class_name, images in class_to_images.items():
         images = sorted(images)
 
+        for split_name in ("train", "validation", "test"):
+            (output_path / split_name / class_name).mkdir(parents=True, exist_ok=True)
+
         # If too few samples, keep everything in train
         if len(images) <= low_count_threshold:
             split_map = {"train": images, "validation": [], "test": []}
@@ -137,12 +140,17 @@ def split_dataset_by_class(
 
 @dataclass(frozen=True)
 class DataConfig:
+    """Configuration for dataset splitting and dataloaders."""
+
+    raw_dir: str = "data/raw/cropped"
     processed_dir: str = "data/processed"
     arch: str = "resnet18"  # resnet18/resnet34/resnet50
     batch_size: int = 32
     num_workers: int = 4
     pin_memory: bool = True
     persistent_workers: bool = True
+    rebuild_processed: bool = True
+    wipe_output_dir: bool = True
 
 
 def get_official_transform(arch: str):
@@ -234,6 +242,17 @@ def make_dataloaders(
     Returns train/val/test DataLoaders + class_to_idx mapping.
     Uses official torchvision transforms for the chosen ResNet weights.
     """
+    if config.rebuild_processed:
+        split_dataset_by_class(
+            raw_dir=config.raw_dir,
+            output_dir=config.processed_dir,
+            train_ratio=0.7,
+            validation_ratio=0.15,
+            test_ratio=0.15,
+            low_count_threshold=3,
+            seed=42,
+            wipe_output_dir=config.wipe_output_dir,
+        )
     transform = get_official_transform(config.arch)
 
     train_ds = FolderSplitDataset(config.processed_dir, "train", transform=transform)
