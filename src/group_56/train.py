@@ -1,17 +1,27 @@
+"""
+Training and validation orchestration for the M7 Project.
+
+This script handles the training lifecycle, including device selection,
+mixed-precision training (AMP), validation, and checkpointing.
+"""
+
 from __future__ import annotations
 
+import os
+import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
-from torch.optim import AdamW
 import typer
+from model import build_resnet
+from torch.optim import AdamW, Optimizer
+from torch.utils.data import DataLoader
 
 from data import DataConfig, make_dataloaders
-from model import build_resnet
-
 
 # ============================================================
 # CONFIGS
@@ -19,20 +29,19 @@ from model import build_resnet
 
 @dataclass(frozen=True)
 class TrainConfig:
+    """Configuration for model training hyperparameters and environment."""
+
     arch: str = "resnet18"
     pretrained: bool = True
     freeze_backbone: bool = False
     unfreeze_from: str | None = None
-
     epochs: int = 10
     lr: float = 3e-4
     weight_decay: float = 1e-4
     label_smoothing: float = 0.0
-
     device: str = "auto"   # auto | cpu | cuda | mps
     amp: bool = True
     seed: int = 42
-
     out_dir: str = "outputs"
     run_name: str = "resnet_run"
 
@@ -42,8 +51,12 @@ class TrainConfig:
 # ============================================================
 
 def set_seed(seed: int) -> None:
-    import random, numpy as np, os
+    """
+    Sets the seed for all relevant libraries to ensure reproducibility.
 
+    Args:
+        seed: The integer seed value.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -53,6 +66,15 @@ def set_seed(seed: int) -> None:
 
 
 def resolve_device(device: str) -> torch.device:
+    """
+    Resolves a string identifier to a torch.device object.
+
+    Args:
+        device: 'cpu', 'cuda', 'mps', or 'auto'.
+
+    Returns:
+        The resolved torch.device.
+    """
     if device == "cpu":
         return torch.device("cpu")
     if device == "cuda":
@@ -60,6 +82,7 @@ def resolve_device(device: str) -> torch.device:
     if device == "mps":
         return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
+    # Auto-detection
     if torch.cuda.is_available():
         return torch.device("cuda")
     if torch.backends.mps.is_available():
@@ -70,11 +93,22 @@ def resolve_device(device: str) -> torch.device:
 def save_checkpoint(
     path: Path,
     model: nn.Module,
-    class_to_idx: dict,
+    class_to_idx: Dict[str, int],
     epoch: int,
     arch: str,
     num_classes: int,
-):
+) -> None:
+    """
+    Saves the model state and metadata to a checkpoint file.
+
+    Args:
+        path: Destination Path for the checkpoint.
+        model: The model whose state_dict will be saved.
+        class_to_idx: Mapping of class names to indices.
+        epoch: The current epoch index.
+        arch: The architecture name string.
+        num_classes: Number of classes in the classifier head.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
@@ -94,17 +128,30 @@ def save_checkpoint(
 
 def train_one_epoch(
     model: nn.Module,
-    loader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.Optimizer,
+    loader: DataLoader,
+    optimizer: Optimizer,
     criterion: nn.Module,
     device: torch.device,
     scaler: Optional[torch.cuda.amp.GradScaler],
     use_amp: bool,
-):
+) -> Tuple[float, float]:
+    """
+    Runs one full training epoch.
+
+    Args:
+        model: The network to train.
+        loader: Training DataLoader.
+        optimizer: The optimizer.
+        criterion: The loss function.
+        device: Hardware device to use.
+        scaler: GradScaler for AMP.
+        use_amp: Whether to use mixed precision.
+
+    Returns:
+        A tuple containing (average_loss, accuracy).
+    """
     model.train()
-    total_loss = 0.0
-    correct = 0
-    total = 0
+    total_loss, correct, total = 0.0, 0, 0
 
     for images, labels in loader:
         images = images.to(device, non_blocking=True)
@@ -112,14 +159,15 @@ def train_one_epoch(
 
         optimizer.zero_grad(set_to_none=True)
 
+        # Automatic Mixed Precision
         if use_amp and device.type == "cuda":
             with torch.cuda.amp.autocast():
                 logits = model(images)
                 loss = criterion(logits, labels)
-            assert scaler is not None
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            if scaler:
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
         else:
             logits = model(images)
             loss = criterion(logits, labels)
@@ -137,14 +185,24 @@ def train_one_epoch(
 @torch.no_grad()
 def validate_one_epoch(
     model: nn.Module,
-    loader: torch.utils.data.DataLoader,
+    loader: DataLoader,
     criterion: nn.Module,
     device: torch.device,
-):
+) -> Tuple[float, float]:
+    """
+    Evaluates the model on the validation set.
+
+    Args:
+        model: The network to evaluate.
+        loader: Validation DataLoader.
+        criterion: The loss function.
+        device: Hardware device to use.
+
+    Returns:
+        A tuple containing (average_loss, accuracy).
+    """
     model.eval()
-    total_loss = 0.0
-    correct = 0
-    total = 0
+    total_loss, correct, total = 0.0, 0, 0
 
     for images, labels in loader:
         images = images.to(device, non_blocking=True)
@@ -175,30 +233,33 @@ def main(
     weight_decay: float = 1e-4,
     pretrained: bool = True,
     freeze_backbone: bool = False,
-    unfreeze_from: str = typer.Option(None),
+    unfreeze_from: Optional[str] = typer.Option(None),
     device: str = "auto",
     amp: bool = True,
     seed: int = 42,
     out_dir: str = "outputs",
     run_name: str = "resnet_run",
-    ckpt_name: str = "last.pt",  
-    save_best: bool = True,      
-):
+    ckpt_name: str = "last.pt",
+    save_best: bool = True,
+) -> None:
+    """
+    Starts the training and validation process via the command line.
+    """
     set_seed(seed)
     dev = resolve_device(device)
     typer.echo(f"Using device: {dev}")
 
-    # Data
+    # Data Initialization
     data_cfg = DataConfig(
         processed_dir=processed_dir,
         arch=arch,
         batch_size=batch_size,
         num_workers=num_workers,
     )
-    train_loader, validation_loader, _, class_to_idx = make_dataloaders(data_cfg)
+    train_loader, val_loader, _, class_to_idx = make_dataloaders(data_cfg)
     num_classes = len(class_to_idx)
 
-    # Model
+    # Model Initialization
     model = build_resnet(
         num_classes=num_classes,
         arch=arch,
@@ -207,7 +268,7 @@ def main(
         unfreeze_from=unfreeze_from,
     ).to(dev)
 
-    # Optimization
+    # Optimization Setup
     criterion = nn.CrossEntropyLoss(label_smoothing=0.0)
     optimizer = AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
@@ -216,15 +277,16 @@ def main(
     )
     scaler = torch.cuda.amp.GradScaler(enabled=(amp and dev.type == "cuda"))
 
-    # Output
+    # Path Setup
     out_path = Path(out_dir) / run_name
     out_path.mkdir(parents=True, exist_ok=True)
 
-    last_ckpt = out_path / ckpt_name          # now configurable
-    best_ckpt = out_path / "best.pt"          # optional
+    last_ckpt = out_path / ckpt_name
+    best_ckpt = out_path / "best.pt"
     best_val_acc = -1.0
 
-    # Training loop
+    # Training Loop
+    #[Image of deep learning training process flowchart]
     for epoch in range(1, epochs + 1):
         tr_loss, tr_acc = train_one_epoch(
             model=model,
@@ -238,18 +300,17 @@ def main(
 
         va_loss, va_acc = validate_one_epoch(
             model=model,
-            loader=validation_loader,
+            loader=val_loader,
             criterion=criterion,
             device=dev,
         )
 
         typer.echo(
             f"Epoch {epoch:02d}/{epochs} | "
-            f"train loss: {tr_loss:.4f} | train acc: {tr_acc:.4f} | "
-            f"val loss: {va_loss:.4f} | val acc: {va_acc:.4f}"
+            f"tr_loss: {tr_loss:.4f} | tr_acc: {tr_acc:.4f} | "
+            f"va_loss: {va_loss:.4f} | va_acc: {va_acc:.4f}"
         )
 
-        # Always save "last"
         save_checkpoint(
             path=last_ckpt,
             model=model,
@@ -259,7 +320,6 @@ def main(
             num_classes=num_classes,
         )
 
-        # Optionally save "best"
         if save_best and va_acc > best_val_acc:
             best_val_acc = va_acc
             save_checkpoint(
@@ -270,11 +330,9 @@ def main(
                 arch=arch,
                 num_classes=num_classes,
             )
-            typer.echo(f"New best checkpoint saved to {best_ckpt} (val acc={best_val_acc:.4f})")
+            typer.echo(f"New best: {best_ckpt} (acc={best_val_acc:.4f})")
 
-    typer.echo(f"Training finished. Last checkpoint saved to {last_ckpt}")
-    if save_best:
-        typer.echo(f"Best checkpoint: {best_ckpt} (val acc={best_val_acc:.4f})")
+    typer.echo("Training process complete.")
 
 
 if __name__ == "__main__":
