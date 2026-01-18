@@ -9,8 +9,8 @@ import torch.nn as nn
 from torch.optim import AdamW
 import typer
 
-from .data import DataConfig, make_dataloaders
-from .model import build_resnet
+from data import DataConfig, make_dataloaders
+from model import build_resnet
 
 
 # ============================================================
