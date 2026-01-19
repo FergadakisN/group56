@@ -1,0 +1,4 @@
+.git
+.dvc/cache
+data/
+venv/
