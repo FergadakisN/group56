@@ -8,6 +8,7 @@ implementations tailored for ResNet architectures.
 
 from __future__ import annotations
 
+import json
 import random
 import shutil
 from collections import defaultdict
@@ -15,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Tuple
 
+import pandas as pd
 import typer
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
@@ -48,13 +50,13 @@ def split_dataset_by_class(
     train_ratio: float = 0.7,
     validation_ratio: float = 0.15,
     test_ratio: float = 0.15,
-    low_count_threshold: int = 3,
+    low_count_threshold: int = 5,
     seed: int = 42,
     extensions: Iterable[str] = (".png", ".jpg", ".jpeg"),
     wipe_output_dir: bool = True,
-) -> Dict[str, Dict[str, int]]:
+) -> Tuple[Dict[str, Dict[str, int]], pd.DataFrame]:
     """
-    Reads images from raw_dir and copies them into split folders by class.
+    Split images per class into train/validation/test folders and emit metadata.
 
     Args:
         raw_dir: Source directory containing raw images.
@@ -68,7 +70,7 @@ def split_dataset_by_class(
         wipe_output_dir: Whether to clear the output directory before starting.
 
     Returns:
-        A dictionary mapping class names to counts in each split.
+        Tuple of (split_counts per class, split_assignment metadata DataFrame).
 
     Raises:
         ValueError: If split ratios do not sum to 1.0.
@@ -102,42 +104,61 @@ def split_dataset_by_class(
         class_to_images[_extract_class_name_from_filename(p)].append(p)
 
     split_counts: Dict[str, Dict[str, int]] = {}
-    copy_tasks: List[Tuple[str, str, Path]] = []
+    copy_tasks: List[Tuple[Path, str, str, Path, str]] = []
+    split_records: List[Dict] = []
 
     for class_name, images in class_to_images.items():
         images = sorted(images)
 
-        # Ensure directory structure exists
-        for split_name in ("train", "validation", "test"):
-            (output_path / split_name / class_name).mkdir(parents=True, exist_ok=True)
-
-        if len(images) <= low_count_threshold:
+        n_images = len(images)
+        
+        if n_images <= low_count_threshold:
+            # Rare class: all samples to train for better learning
             split_map = {"train": images, "validation": [], "test": []}
+            reason = "rare_class"
         else:
+            # Random split with ratios
             rng.shuffle(images)
-            n_total = len(images)
-            n_train = max(1, int(n_total * train_ratio))
-            n_validation = max(1, int(n_total * validation_ratio))
+            n_train = max(1, int(n_images * train_ratio))
+            n_validation = max(1, int(n_images * validation_ratio))
             split_map = {
                 "train": images[:n_train],
                 "validation": images[n_train: n_train + n_validation],
                 "test": images[n_train + n_validation:],
             }
+            reason = "random_split"
 
         split_counts[class_name] = {k: len(v) for k, v in split_map.items()}
+
         copy_tasks.extend(
-            (split_name, class_name, img_path)
+            (
+                output_path / split_name / class_name / img_path.name,
+                class_name,
+                split_name,
+                img_path,
+                reason,
+            )
             for split_name, split_images in split_map.items()
             for img_path in split_images
         )
 
-    for split_name, class_name, img_path in copy_tasks:
-        target_dir = output_path / split_name / class_name
-        dest = target_dir / img_path.name
+    for dest, class_name, split_name, img_path, reason in copy_tasks:
         if not dest.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(img_path, dest)
+        split_records.append(
+            {
+                "image_id": img_path.stem,
+                "species_id": class_name,
+                "split": split_name,
+                "reason": reason,
+                "source_path": str(img_path),
+                "dest_path": str(dest),
+            }
+        )
 
-    return split_counts
+    split_df = pd.DataFrame(split_records)
+    return split_counts, split_df
 
 
 # ============================================================
@@ -245,7 +266,7 @@ def make_dataloaders(
         A tuple of (train_loader, val_loader, test_loader, class_to_idx).
     """
     if config.rebuild_processed:
-        split_dataset_by_class(
+        _counts, _ = split_dataset_by_class(
             raw_dir=config.raw_dir,
             output_dir=config.processed_dir,
             wipe_output_dir=config.wipe_output_dir,
@@ -286,12 +307,12 @@ def build_splits_cli(
     train_ratio: float = 0.7,
     validation_ratio: float = 0.15,
     test_ratio: float = 0.15,
-    low_count_threshold: int = 3,
+    low_count_threshold: int = 5,
     seed: int = 42,
     wipe_output_dir: bool = True,
 ) -> None:
     """Command-line interface to trigger the dataset splitting process."""
-    counts = split_dataset_by_class(
+    counts, split_df = split_dataset_by_class(
         raw_dir=raw_dir,
         output_dir=output_dir,
         train_ratio=train_ratio,
@@ -302,8 +323,38 @@ def build_splits_cli(
         wipe_output_dir=wipe_output_dir,
     )
 
-    for cls, splits in counts.items():
-        typer.echo(f"{cls}: {splits}")
+    split_csv_path = Path(output_dir) / "split_assignment.csv"
+    split_df.to_csv(split_csv_path, index=False)
+    typer.echo(f"Saved split assignments to {split_csv_path}")
+
+    # Prepare summary statistics
+    split_value_counts = split_df["split"].value_counts().to_dict()
+    summary = {
+        "total_records": len(split_df),
+        "total_classes": len(counts),
+        "split_totals": split_value_counts,
+        "per_class_counts": counts,
+        "split_ratios": {
+            "train": train_ratio,
+            "validation": validation_ratio,
+            "test": test_ratio,
+        },
+        "low_count_threshold": low_count_threshold,
+        "seed": seed,
+    }
+
+    # Save summary to JSON
+    summary_json_path = Path(output_dir) / "split_summary.json"
+    with open(summary_json_path, "w") as f:
+        json.dump(summary, f, indent=2)
+    typer.echo(f"Saved split summary to {summary_json_path}")
+
+    # Print summary to terminal
+    typer.echo(f"\nTotal records tracked: {len(split_df)}")
+    typer.echo(f"Total classes: {len(counts)}")
+    typer.echo(f"\nSplit distribution:")
+    for split_name, count in split_value_counts.items():
+        typer.echo(f"  {split_name}: {count}")
 
 
 if __name__ == "__main__":
