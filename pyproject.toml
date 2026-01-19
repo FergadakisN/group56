@@ -33,7 +33,16 @@ dev = {file = ['requirements_dev.txt']}
 line-length = 120
 
 [tool.ruff.lint]
-select = ["I", "N", "E", "W", ]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import sorting)
+    "N",   # pep8-naming
+    "B",   # bugbear (common bugs)
+    "UP",  # pyupgrade (modern syntax)
+    "C4",  # comprehensions
+]
 
 [tool.coverage.run]
 omit = ["tests/*"]

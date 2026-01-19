@@ -7,7 +7,6 @@ filelock==3.20.3
 fsspec==2026.1.0
 h11==0.16.0
 idna==3.11
-invoke==2.2.1
 Jinja2==3.1.6
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
@@ -23,8 +22,6 @@ Pygments==2.19.2
 python-dateutil==2.9.0.post0
 pytz==2025.2
 rich==14.2.0
-ruff==0.14.13
-shellingham==1.5.4
 six==1.17.0
 starlette==0.46.2
 sympy==1.13.1
