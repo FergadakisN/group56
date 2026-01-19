@@ -9,7 +9,7 @@ from tests import SRC_ROOT
 
 sys.path.insert(0, str(SRC_ROOT))
 
-from group_56.data import DataConfig, make_dataloaders
+from group_56.data import DataConfig, make_dataloaders, split_dataset_by_class, _extract_class_name_from_filename
 
 
 def test_make_dataloaders_loads_tensors() -> None:
@@ -108,3 +108,23 @@ def test_no_data_leakage_between_splits() -> None:
     assert train_paths.isdisjoint(val_paths)
     assert train_paths.isdisjoint(test_paths)
     assert val_paths.isdisjoint(test_paths)
+
+
+def test_extract_class_name_from_filename() -> None:
+    """Ensure class name parsing matches the filename format."""
+    assert _extract_class_name_from_filename(Path("some_fish_12.png")) == "some_fish"
+    assert _extract_class_name_from_filename(Path("singleclass.png")) == "singleclass"
+
+
+def test_split_dataset_invalid_ratios(tmp_path: Path) -> None:
+    """Ensure invalid split ratios raise an error."""
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(ValueError, match="Split ratios must sum to 1.0"):
+        split_dataset_by_class(
+            raw_dir=str(raw_dir),
+            output_dir=str(tmp_path / "processed"),
+            train_ratio=0.5,
+            validation_ratio=0.3,
+            test_ratio=0.3,
+        )
