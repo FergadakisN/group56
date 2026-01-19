@@ -47,9 +47,7 @@ def build_resnet(
         weights = models.ResNet50_Weights.DEFAULT if pretrained else None
         model = models.resnet50(weights=weights)
     else:
-        raise ValueError(
-            f"Unknown architecture: {arch}. Supported: resnet18, resnet34, resnet50"
-        )
+        raise ValueError(f"Unknown architecture: {arch}. Supported: resnet18, resnet34, resnet50")
 
     # 2. Classifier head replacement
     # ResNet models use 'fc' (Fully Connected) as the final layer name

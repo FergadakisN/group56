@@ -12,9 +12,10 @@ import json
 import random
 import shutil
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any
 
 import pandas as pd
 import typer
@@ -54,7 +55,7 @@ def split_dataset_by_class(
     seed: int = 42,
     extensions: Iterable[str] = (".png", ".jpg", ".jpeg"),
     wipe_output_dir: bool = True,
-) -> Tuple[Dict[str, Dict[str, int]], pd.DataFrame]:
+) -> tuple[dict[str, dict[str, int]], pd.DataFrame]:
     """
     Split images per class into train/validation/test folders and emit metadata.
 
@@ -92,26 +93,23 @@ def split_dataset_by_class(
     exts = {e.lower() for e in extensions}
     rng = random.Random(seed)
 
-    image_paths = [
-        p for p in raw_path.rglob("*")
-        if p.is_file() and p.suffix.lower() in exts
-    ]
+    image_paths = [p for p in raw_path.rglob("*") if p.is_file() and p.suffix.lower() in exts]
     if not image_paths:
         raise FileNotFoundError(f"No images found in {raw_path}")
 
-    class_to_images: Dict[str, List[Path]] = defaultdict(list)
+    class_to_images: dict[str, list[Path]] = defaultdict(list)
     for p in image_paths:
         class_to_images[_extract_class_name_from_filename(p)].append(p)
 
-    split_counts: Dict[str, Dict[str, int]] = {}
-    copy_tasks: List[Tuple[Path, str, str, Path, str]] = []
-    split_records: List[Dict] = []
+    split_counts: dict[str, dict[str, int]] = {}
+    copy_tasks: list[tuple[Path, str, str, Path, str]] = []
+    split_records: list[dict] = []
 
     for class_name, images in class_to_images.items():
         images = sorted(images)
 
         n_images = len(images)
-        
+
         if n_images <= low_count_threshold:
             # Rare class: all samples to train for better learning
             split_map = {"train": images, "validation": [], "test": []}
@@ -123,8 +121,8 @@ def split_dataset_by_class(
             n_validation = max(1, int(n_images * validation_ratio))
             split_map = {
                 "train": images[:n_train],
-                "validation": images[n_train: n_train + n_validation],
-                "test": images[n_train + n_validation:],
+                "validation": images[n_train : n_train + n_validation],
+                "test": images[n_train + n_validation :],
             }
             reason = "random_split"
 
@@ -227,9 +225,9 @@ class FolderSplitDataset(Dataset):
 
         class_dirs = sorted([p for p in split_dir.iterdir() if p.is_dir()])
         self.classes = [p.name for p in class_dirs]
-        self.class_to_idx: Dict[str, int] = {c: i for i, c in enumerate(self.classes)}
+        self.class_to_idx: dict[str, int] = {c: i for i, c in enumerate(self.classes)}
 
-        self.samples: List[Tuple[Path, int]] = sorted(
+        self.samples: list[tuple[Path, int]] = sorted(
             [
                 (img_path, self.class_to_idx[cls])
                 for cls in self.classes
@@ -243,7 +241,7 @@ class FolderSplitDataset(Dataset):
         """Returns the total number of samples."""
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, int] | Tuple[Any, int, str]:
+    def __getitem__(self, idx: int) -> tuple[Any, int] | tuple[Any, int, str]:
         """Returns the (image, label) or (image, label, path) at the given index."""
         path, label = self.samples[idx]
         img = Image.open(path).convert("RGB")
@@ -257,14 +255,17 @@ class FolderSplitDataset(Dataset):
 
 
 def make_dataloaders(
-    config: DataConfig = DataConfig(),
-) -> Tuple[DataLoader, DataLoader, DataLoader, Dict[str, int]]:
+    config: DataConfig | None = None,
+) -> tuple[DataLoader, DataLoader, DataLoader, dict[str, int]]:
     """
     Prepares DataLoaders for the training, validation, and test sets.
 
     Returns:
         A tuple of (train_loader, val_loader, test_loader, class_to_idx).
     """
+    if config is None:
+        config = DataConfig()
+
     if config.rebuild_processed:
         _counts, _ = split_dataset_by_class(
             raw_dir=config.raw_dir,
@@ -274,10 +275,7 @@ def make_dataloaders(
 
     transform = get_official_transform(config.arch)
     splits = ["train", "validation", "test"]
-    datasets = {
-        s: FolderSplitDataset(config.processed_dir, s, transform=transform)
-        for s in splits
-    }
+    datasets = {s: FolderSplitDataset(config.processed_dir, s, transform=transform) for s in splits}
 
     persistent = config.persistent_workers and config.num_workers > 0
 
@@ -300,6 +298,7 @@ def make_dataloaders(
 # ============================================================
 # CLI ENTRYPOINT
 # ============================================================
+
 
 def build_splits_cli(
     raw_dir: str = "data/raw/cropped",
@@ -352,7 +351,7 @@ def build_splits_cli(
     # Print summary to terminal
     typer.echo(f"\nTotal records tracked: {len(split_df)}")
     typer.echo(f"Total classes: {len(counts)}")
-    typer.echo(f"\nSplit distribution:")
+    typer.echo("\nSplit distribution:")
     for split_name, count in split_value_counts.items():
         typer.echo(f"  {split_name}: {count}")
 

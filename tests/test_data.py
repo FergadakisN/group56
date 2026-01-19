@@ -9,7 +9,7 @@ from tests import SRC_ROOT
 
 sys.path.insert(0, str(SRC_ROOT))
 
-from group_56.data import DataConfig, make_dataloaders, split_dataset_by_class, _extract_class_name_from_filename
+from group_56.data import DataConfig, _extract_class_name_from_filename, make_dataloaders, split_dataset_by_class
 
 
 def test_make_dataloaders_loads_tensors() -> None:
