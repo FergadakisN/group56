@@ -1,0 +1,53 @@
+steps:
+  # --- IMAGE 1: TRAINING ---
+  # Step 1: Build the Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build Training Image"
+    args:
+      [
+        "build",
+        ".",
+        "-t",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/train-image:native",
+        "-f",
+        "dockerfiles/train.Dockerfile",
+      ]
+
+  # Step 2: Push the image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push Training Image"
+    args:
+      [
+        "push",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/train-image:native",
+      ]
+
+  # --- IMAGE 2: EVALUATION ---
+  # Step 1: Build the Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build Eval Image"
+    args:
+      [
+        "build",
+        ".",
+        "-t",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evaluate-image:native",
+        "-f",
+        "dockerfiles/evaluate.Dockerfile",
+      ]
+
+  # Step 2: Push the image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push Eval Image"
+    args:
+      [
+        "push",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evaluate-image:native",
+      ]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _LOCATION: "europe-west1"
+  _REPOSITORY: "fish-repo"
