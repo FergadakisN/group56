@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import random
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -19,9 +20,10 @@ import torch.nn as nn
 from typing import Annotated, Optional
 import typer
 import wandb
-from .model import build_resnet
 from torch.optim import AdamW, Optimizer
 from torch.utils.data import DataLoader
+
+from .model import build_resnet
 
 from .data import DataConfig, make_dataloaders
 
@@ -243,10 +245,33 @@ def main(
     run_name: str = "resnet_run",
     ckpt_name: str = "last.pt",
     save_best: bool = True,
+    config_path: Annotated[Optional[str], typer.Option(help="Path to JSON config with training overrides")] = None,
 ) -> None:
     """
     Starts the training and validation process via the command line.
     """
+    # Load optional JSON config overrides
+    if config_path:
+        with open(config_path) as f:
+            cfg_json = json.load(f)
+        processed_dir = cfg_json.get("processed_dir", processed_dir)
+        batch_size = cfg_json.get("batch_size", batch_size)
+        num_workers = cfg_json.get("num_workers", num_workers)
+        arch = cfg_json.get("arch", arch)
+        epochs = cfg_json.get("epochs", epochs)
+        lr = cfg_json.get("lr", lr)
+        weight_decay = cfg_json.get("weight_decay", weight_decay)
+        pretrained = cfg_json.get("pretrained", pretrained)
+        freeze_backbone = cfg_json.get("freeze_backbone", freeze_backbone)
+        unfreeze_from = cfg_json.get("unfreeze_from", unfreeze_from)
+        device = cfg_json.get("device", device)
+        amp = cfg_json.get("amp", amp)
+        seed = cfg_json.get("seed", seed)
+        out_dir = cfg_json.get("out_dir", out_dir)
+        run_name = cfg_json.get("run_name", run_name)
+        ckpt_name = cfg_json.get("ckpt_name", ckpt_name)
+        save_best = cfg_json.get("save_best", save_best)
+
     set_seed(seed)
     dev = resolve_device(device)
     typer.echo(f"Using device: {dev}")
