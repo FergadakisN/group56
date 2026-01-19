@@ -1,12 +1,16 @@
-Generating the docs
-----------
+# Documentation workflow
 
-Use [mkdocs](http://www.mkdocs.org/) structure to update the documentation.
+We use MkDocs with the config stored at `docs/mkdocs.yaml`.
 
-Build locally with:
+```bash
+# Install dev extras first
+pip install -e .["dev"]
 
-    mkdocs build
+# Serve with live reload (default port 8000)
+mkdocs serve --config-file docs/mkdocs.yaml
 
-Serve locally with:
+# Build static site into ./build
+mkdocs build --config-file docs/mkdocs.yaml --site-dir build
+```
 
-    mkdocs serve
+You can also use Invoke shortcuts: `invoke build_docs` or `invoke serve_docs`.
