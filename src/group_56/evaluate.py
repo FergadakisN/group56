@@ -1,16 +1,18 @@
 """
 Evaluation module for the M7 Project.
 
-This script provides utilities to load a trained model checkpoint and 
+This script provides utilities to load a trained model checkpoint and
 perform a final evaluation on the test or validation datasets.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import (
+    Annotated,  # Add this import at the top
+    Any,
+)
 
-from typing import Annotated # Add this import at the top
 import torch
 import torch.nn as nn
 import typer
@@ -25,8 +27,8 @@ def evaluate(
     model: nn.Module,
     loader: DataLoader,
     device: torch.device,
-    criterion: Optional[nn.Module] = None,
-) -> Tuple[float, float]:
+    criterion: nn.Module | None = None,
+) -> tuple[float, float]:
     """
     Computes the loss and accuracy of the model on a given dataset.
 
@@ -60,7 +62,7 @@ def evaluate(
     acc = correct / total if total > 0 else 0.0
     if criterion is None:
         return float("nan"), acc
-    
+
     avg_loss = total_loss / total
     return avg_loss, acc
 
@@ -89,7 +91,7 @@ def resolve_device(device: str) -> torch.device:
     return torch.device("cpu")
 
 
-def load_checkpoint(ckpt_path: Path, device: torch.device) -> Dict[str, Any]:
+def load_checkpoint(ckpt_path: Path, device: torch.device) -> dict[str, Any]:
     """
     Loads a saved PyTorch checkpoint from disk.
 
@@ -105,13 +107,13 @@ def load_checkpoint(ckpt_path: Path, device: torch.device) -> Dict[str, Any]:
     """
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
-    
-    checkpoint: Dict[str, Any] = torch.load(ckpt_path, map_location=device)
+
+    checkpoint: dict[str, Any] = torch.load(ckpt_path, map_location=device)
     return checkpoint
 
 
 def main(
-processed_dir: str = "data/processed",
+    processed_dir: str = "data/processed",
     arch: str = "resnet18",
     batch_size: int = 64,
     num_workers: int = 4,
@@ -129,13 +131,13 @@ processed_dir: str = "data/processed",
     # Load checkpoint metadata
     ckpt = load_checkpoint(Path(ckpt_path), dev)
     ckpt_arch: str = ckpt.get("arch", arch)
-    class_to_idx_ckpt: Optional[Dict[str, int]] = ckpt.get("class_to_idx")
+    class_to_idx_ckpt: dict[str, int] | None = ckpt.get("class_to_idx")
 
     # Determine number of classes
-    num_classes: Optional[int] = ckpt.get("num_classes")
+    num_classes: int | None = ckpt.get("num_classes")
     if num_classes is None and class_to_idx_ckpt is not None:
         num_classes = len(class_to_idx_ckpt)
-    
+
     if num_classes is None:
         raise ValueError("num_classes not found in checkpoint.")
 
@@ -152,16 +154,11 @@ processed_dir: str = "data/processed",
     train_loader, val_loader, test_loader, class_to_idx_data = loaders
 
     # Select Split
-    split_map = {
-        "train": train_loader,
-        "val": val_loader,
-        "validation": val_loader,
-        "test": test_loader
-    }
-    
+    split_map = {"train": train_loader, "val": val_loader, "validation": val_loader, "test": test_loader}
+
     if split not in split_map:
         raise ValueError(f"Invalid split '{split}'. Use train, validation, or test.")
-    
+
     loader = split_map[split]
 
     # Warning for class index mismatch
@@ -179,17 +176,12 @@ processed_dir: str = "data/processed",
     criterion = nn.CrossEntropyLoss() if compute_loss else None
 
     # Run Evaluation
-    loss, acc = evaluate(
-        model=model, 
-        loader=loader, 
-        device=dev, 
-        criterion=criterion
-    )
+    loss, acc = evaluate(model=model, loader=loader, device=dev, criterion=criterion)
 
     result_str = f"{split} acc: {acc:.4f}"
     if compute_loss:
         result_str = f"{split} loss: {loss:.4f} | " + result_str
-    
+
     typer.echo(result_str)
 
 

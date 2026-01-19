@@ -47,6 +47,9 @@ select = [
 [tool.coverage.run]
 omit = ["tests/*"]
 
+[tool.coverage.report]
+omit = ["/private/var/folders/*", "_remote_module_non_scriptable.py"]
+
 [project.scripts]
 data-split = "group_56.data:build_splits_cli"
 train-model = "group_56.train:main"
