@@ -1,43 +1,35 @@
-# pre-commit auto-update workflow
-# Dependabot does not support updating pre-commit so this workflow will do that
-name: Pre-commit auto-update
+name: Pre-commit CI
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch: {}  # Allows manual executions
-
-permissions:
-  contents: write
-  pull-requests: write
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  auto-update:
+  pre-commit:
+    name: Check pre-commit
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
-          cache: 'pip'
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
 
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
+    - name: Run pre-commit
+      uses: pre-commit/action@v3.0.1
+#      with:
+#        continue-on-error: true
 
-      - name: Install pre-commit
-        run: pip install pre-commit
+#    - name: List modified files
+#      run: git diff --name-only
 
-      - name: Run pre-commit autoupdate
-        run: pre-commit autoupdate
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update/pre-commit-autoupdate
-          title: Auto-update pre-commit hooks
-          commit-message: Auto-update pre-commit hooks
-          body: Update versions of tools in pre-commit configs to latest version
-          labels: dependencies
+#    - name: Commit changes
+#      uses: stefanzweifel/git-auto-commit-action@v5
+#      with:
+#        commit_message: Pre-commit fixes
+#        commit_options: '--no-verify'

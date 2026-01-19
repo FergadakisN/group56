@@ -7,29 +7,29 @@ mixed-precision training (AMP), validation, and checkpointing.
 
 from __future__ import annotations
 
+import json
 import os
 import random
-import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Annotated
 
 import numpy as np
 import torch
 import torch.nn as nn
-from typing import Annotated, Optional
 import typer
-import wandb
 from torch.optim import AdamW, Optimizer
 from torch.utils.data import DataLoader
 
-from .model import build_resnet
+import wandb
 
 from .data import DataConfig, make_dataloaders
+from .model import build_resnet
 
 # ============================================================
 # CONFIGS
 # ============================================================
+
 
 @dataclass(frozen=True)
 class TrainConfig:
@@ -43,7 +43,7 @@ class TrainConfig:
     lr: float = 3e-4
     weight_decay: float = 1e-4
     label_smoothing: float = 0.0
-    device: str = "auto"   # auto | cpu | cuda | mps
+    device: str = "auto"  # auto | cpu | cuda | mps
     amp: bool = True
     seed: int = 42
     out_dir: str = "outputs"
@@ -53,6 +53,7 @@ class TrainConfig:
 # ============================================================
 # UTILS
 # ============================================================
+
 
 def set_seed(seed: int) -> None:
     """
@@ -97,7 +98,7 @@ def resolve_device(device: str) -> torch.device:
 def save_checkpoint(
     path: Path,
     model: nn.Module,
-    class_to_idx: Dict[str, int],
+    class_to_idx: dict[str, int],
     epoch: int,
     arch: str,
     num_classes: int,
@@ -130,15 +131,16 @@ def save_checkpoint(
 # TRAINING / VALIDATION
 # ============================================================
 
+
 def train_one_epoch(
     model: nn.Module,
     loader: DataLoader,
     optimizer: Optimizer,
     criterion: nn.Module,
     device: torch.device,
-    scaler: Optional[torch.cuda.amp.GradScaler],
+    scaler: torch.cuda.amp.GradScaler | None,
     use_amp: bool,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Runs one full training epoch.
 
@@ -192,7 +194,7 @@ def validate_one_epoch(
     loader: DataLoader,
     criterion: nn.Module,
     device: torch.device,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Evaluates the model on the validation set.
 
@@ -227,6 +229,7 @@ def validate_one_epoch(
 # CLI ENTRYPOINT
 # ============================================================
 
+
 def main(
     processed_dir: str = "data/processed",
     batch_size: int = 32,
@@ -237,7 +240,7 @@ def main(
     weight_decay: float = 1e-4,
     pretrained: bool = True,
     freeze_backbone: bool = False,
-    unfreeze_from: Annotated[Optional[str], typer.Option(help="Layer name to unfreeze")] = None,
+    unfreeze_from: Annotated[str | None, typer.Option(help="Layer name to unfreeze")] = None,
     device: str = "auto",
     amp: bool = True,
     seed: int = 42,
@@ -245,7 +248,7 @@ def main(
     run_name: str = "resnet_run",
     ckpt_name: str = "last.pt",
     save_best: bool = True,
-    config_path: Annotated[Optional[str], typer.Option(help="Path to JSON config with training overrides")] = None,
+    config_path: Annotated[str | None, typer.Option(help="Path to JSON config with training overrides")] = None,
 ) -> None:
     """
     Starts the training and validation process via the command line.
@@ -278,7 +281,7 @@ def main(
 
     # W&B init
     run = wandb.init(
-        project="group56-fish",   # change to your project name
+        project="group56-fish",  # change to your project name
         name=run_name,
         config={
             "processed_dir": processed_dir,
@@ -297,7 +300,7 @@ def main(
         },
     )
 
-    cfg = wandb.config
+    cfg = run.config
     lr = cfg.get("lr", lr)
     batch_size = cfg.get("batch_size", batch_size)
     weight_decay = cfg.get("weight_decay", weight_decay)
@@ -307,8 +310,6 @@ def main(
 
     if freeze_backbone:
         unfreeze_from = None
-
-
 
     # Data Initialization
     data_cfg = DataConfig(
@@ -347,7 +348,7 @@ def main(
     best_val_acc = -1.0
 
     # Training Loop
-    #[Image of deep learning training process flowchart]
+    # [Image of deep learning training process flowchart]
     for epoch in range(1, epochs + 1):
         tr_loss, tr_acc = train_one_epoch(
             model=model,
@@ -407,7 +408,7 @@ def main(
     wandb.summary["best_epoch"] = epoch
 
     typer.echo("Training process complete.")
-    wandb.finish()
+    run.finish()
 
 
 if __name__ == "__main__":
