@@ -22,7 +22,6 @@ Pygments==2.19.2
 python-dateutil==2.9.0.post0
 pytz==2025.2
 rich==14.2.0
-shellingham==1.5.4
 six==1.17.0
 starlette==0.46.2
 sympy==1.13.1
@@ -33,3 +32,6 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2025.3
 uvicorn==0.34.2
+dvc
+dvc-gdrive
+pydrive2

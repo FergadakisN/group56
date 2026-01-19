@@ -1,23 +1,26 @@
 import pandas as pd
+from pathlib import Path
 
-input_file = "./data/raw/final_all_index.txt"
-output_file = "./data/processed/final_all_index.csv"
+def parse_index_file(input_file: str) -> pd.DataFrame:
+    data = []
+    with open(input_file, "r") as file:
+        for line in file:
+            parts = [p.strip() for p in line.split("=")]
 
-data = []
-with open(input_file, "r") as file:
-    for line in file:
-        parts = [p.strip() for p in line.split("=")]
+            if len(parts) == 5:
+                data.append({
+                    'image_id': parts[3],
+                    'label': parts[1],
+                    'status': parts[2], # controlled/in-situ
+                })
 
-        if len(parts) == 5:
-            data.append({
-                'image_id': parts[3],
-                'label': parts[1],
-                'status': parts[2],
-            })
+    return pd.DataFrame(data)
 
-df = pd.DataFrame(data)
+if __name__ == "__main__":
+    input_file = "data/raw/final_all_index.txt"
+    output_file = "data/processed/metadata.csv"
 
-df.to_csv(output_file, index=False)
-
-print(f"Successfully converted {len(df)} rows to {output_file}")
-print(df.head()) # Preview the first few rows
+    df = parse_index_file(input_file)
+    df.to_csv(output_file, index=False)
+    print(f"Successfully converted {len(df)} rows to {output_file}")
+    # print(df.head()) # Preview the first few rows

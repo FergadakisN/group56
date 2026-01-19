@@ -1,36 +1,54 @@
+"""
+Evaluation module for the M7 Project.
+
+This script provides utilities to load a trained model checkpoint and 
+perform a final evaluation on the test or validation datasets.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple
+from typing import Any, Dict, Optional, Tuple
 
+from typing import Annotated # Add this import at the top
 import torch
 import torch.nn as nn
 import typer
+from torch.utils.data import DataLoader
 
-from data import DataConfig, make_dataloaders
-from model import build_resnet
+from .data import DataConfig, make_dataloaders
+from .model import build_resnet
 
 
 @torch.no_grad()
 def evaluate(
     model: nn.Module,
-    loader: torch.utils.data.DataLoader,
+    loader: DataLoader,
     device: torch.device,
     criterion: Optional[nn.Module] = None,
 ) -> Tuple[float, float]:
     """
-    Returns (avg_loss, accuracy). If criterion is None, loss is returned as NaN.
+    Computes the loss and accuracy of the model on a given dataset.
+
+    Args:
+        model: The trained PyTorch model.
+        loader: DataLoader for the dataset split to evaluate.
+        device: The hardware device (cpu, cuda, or mps).
+        criterion: Optional loss function. If None, loss is returned as NaN.
+
+    Returns:
+        A tuple of (average_loss, accuracy).
     """
     model.eval()
-    total_loss = 0.0
-    correct = 0
-    total = 0
+    total_loss: float = 0.0
+    correct: int = 0
+    total: int = 0
 
     for images, labels in loader:
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
 
-        logits = model(images)
+        logits: torch.Tensor = model(images)
         preds = logits.argmax(dim=1)
         correct += (preds == labels).sum().item()
         total += labels.size(0)
@@ -42,10 +60,21 @@ def evaluate(
     acc = correct / total if total > 0 else 0.0
     if criterion is None:
         return float("nan"), acc
-    return total_loss / total, acc
+    
+    avg_loss = total_loss / total
+    return avg_loss, acc
 
 
 def resolve_device(device: str) -> torch.device:
+    """
+    Translates a device string into a torch.device object.
+
+    Args:
+        device: Device string ('auto', 'cpu', 'cuda', 'mps').
+
+    Returns:
+        The resolved torch.device.
+    """
     if device == "cpu":
         return torch.device("cpu")
     if device == "cuda":
@@ -53,7 +82,6 @@ def resolve_device(device: str) -> torch.device:
     if device == "mps":
         return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
-    # auto
     if torch.cuda.is_available():
         return torch.device("cuda")
     if torch.backends.mps.is_available():
@@ -62,43 +90,56 @@ def resolve_device(device: str) -> torch.device:
 
 
 def load_checkpoint(ckpt_path: Path, device: torch.device) -> Dict[str, Any]:
+    """
+    Loads a saved PyTorch checkpoint from disk.
+
+    Args:
+        ckpt_path: Path to the .pt or .pth file.
+        device: The device to map the saved weights to.
+
+    Returns:
+        A dictionary containing the state_dict and metadata.
+
+    Raises:
+        FileNotFoundError: If the checkpoint file does not exist.
+    """
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
-    return torch.load(ckpt_path, map_location=device)
+    
+    checkpoint: Dict[str, Any] = torch.load(ckpt_path, map_location=device)
+    return checkpoint
 
 
 def main(
-    processed_dir: str = "data/processed",
+processed_dir: str = "data/processed",
     arch: str = "resnet18",
     batch_size: int = 64,
     num_workers: int = 4,
     device: str = "auto",
-    ckpt_path: str = typer.Option(..., help="Path to checkpoint (.pt), e.g. outputs/run_name/best.pt"),
-    split: str = typer.Option("test", help="Which split to evaluate: test | validation | train"),
+    # Change these two lines:
+    ckpt_path: Annotated[str, typer.Option(help="Path to checkpoint (.pt)")] = "outputs/resnet_run/best.pt",
+    split: Annotated[str, typer.Option(help="Split to evaluate: test | val")] = "test",
     compute_loss: bool = True,
-):
-    """
-    Evaluate a saved checkpoint on the selected split.
-    Recommended: split='test' and ckpt_path pointing to best.pt.
-    """
+) -> None:
+    # Now Path(ckpt_path) will correctly receive a string
     dev = resolve_device(device)
+    ckpt = load_checkpoint(Path(ckpt_path), dev)
     typer.echo(f"Using device: {dev}")
 
+    # Load checkpoint metadata
     ckpt = load_checkpoint(Path(ckpt_path), dev)
+    ckpt_arch: str = ckpt.get("arch", arch)
+    class_to_idx_ckpt: Optional[Dict[str, int]] = ckpt.get("class_to_idx")
 
-    # If checkpoint contains arch/num_classes, prefer those (safer)
-    ckpt_arch = ckpt.get("arch", arch)
-    num_classes = ckpt.get("num_classes", None)
-    class_to_idx = ckpt.get("class_to_idx", None)
-
-    if num_classes is None and class_to_idx is not None:
-        num_classes = len(class_to_idx)
+    # Determine number of classes
+    num_classes: Optional[int] = ckpt.get("num_classes")
+    if num_classes is None and class_to_idx_ckpt is not None:
+        num_classes = len(class_to_idx_ckpt)
+    
     if num_classes is None:
-        raise ValueError(
-            "num_classes not found in checkpoint. Ensure train.py saves it (recommended)."
-        )
+        raise ValueError("num_classes not found in checkpoint.")
 
-    # Data (use same arch transforms as training, to match preprocessing)
+    # Prepare DataLoaders
     data_cfg = DataConfig(
         processed_dir=processed_dir,
         arch=ckpt_arch,
@@ -107,42 +148,49 @@ def main(
         rebuild_processed=False,
         wipe_output_dir=False,
     )
-    train_loader, val_loader, test_loader, class_to_idx_data = make_dataloaders(data_cfg)
+    loaders = make_dataloaders(data_cfg)
+    train_loader, val_loader, test_loader, class_to_idx_data = loaders
 
-    if split == "train":
-        loader = train_loader
-    elif split in ("val", "validation"):
-        loader = val_loader
-    elif split == "test":
-        loader = test_loader
-    else:
-        raise ValueError("split must be one of: train, validation, test")
+    # Select Split
+    split_map = {
+        "train": train_loader,
+        "val": val_loader,
+        "validation": val_loader,
+        "test": test_loader
+    }
+    
+    if split not in split_map:
+        raise ValueError(f"Invalid split '{split}'. Use train, validation, or test.")
+    
+    loader = split_map[split]
 
-    # Optional safety check: mapping consistency
-    if class_to_idx is not None and class_to_idx != class_to_idx_data:
-        typer.echo(
-            "Warning: class_to_idx in checkpoint differs from current data folder mapping.\n"
-            "This can cause incorrect label interpretation if folders changed."
-        )
+    # Warning for class index mismatch
+    if class_to_idx_ckpt is not None and class_to_idx_ckpt != class_to_idx_data:
+        typer.echo("Warning: Checkpoint class mapping differs from dataset mapping!")
 
-    # Model
+    # Initialize and load model
     model = build_resnet(
         num_classes=num_classes,
         arch=ckpt_arch,
         pretrained=False,
-        freeze_backbone=False,
-        unfreeze_from=None,
     ).to(dev)
     model.load_state_dict(ckpt["model_state_dict"])
 
     criterion = nn.CrossEntropyLoss() if compute_loss else None
 
-    loss, acc = evaluate(model=model, loader=loader, device=dev, criterion=criterion)
+    # Run Evaluation
+    loss, acc = evaluate(
+        model=model, 
+        loader=loader, 
+        device=dev, 
+        criterion=criterion
+    )
 
+    result_str = f"{split} acc: {acc:.4f}"
     if compute_loss:
-        typer.echo(f"{split} loss: {loss:.4f} | {split} acc: {acc:.4f}")
-    else:
-        typer.echo(f"{split} acc: {acc:.4f}")
+        result_str = f"{split} loss: {loss:.4f} | " + result_str
+    
+    typer.echo(result_str)
 
 
 if __name__ == "__main__":
