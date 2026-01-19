@@ -19,7 +19,7 @@ import torch.nn as nn
 from typing import Annotated, Optional
 import typer
 import wandb
-from model import build_resnet
+from .model import build_resnet
 from torch.optim import AdamW, Optimizer
 from torch.utils.data import DataLoader
 
