@@ -23,4 +23,4 @@ COPY src src/
 RUN pip install . --no-deps --no-cache-dir
 
 # 7. Change the Entrypoint to the evaluation script
-ENTRYPOINT ["python", "-u", "src/group_56/evaluate.py"]
+ENTRYPOINT ["python", "-u", "-m", "group_56.evaluate"]
