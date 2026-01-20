@@ -18,10 +18,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import typer
+import wandb
 from torch.optim import AdamW, Optimizer
 from torch.utils.data import DataLoader
-
-import wandb
 
 from .data import DataConfig, make_dataloaders
 from .model import build_resnet
