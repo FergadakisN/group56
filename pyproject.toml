@@ -91,6 +91,9 @@ select = [
     "C4",  # comprehensions
 ]
 
+[tool.ruff.lint.isort]
+known-third-party = ["wandb"]
+
 [tool.coverage.run]
 omit = ["tests/*"]
 
