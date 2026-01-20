@@ -211,6 +211,7 @@ class FolderSplitDataset(Dataset):
         transform: Any = None,
         extensions: Iterable[str] = (".png", ".jpg", ".jpeg"),
         return_path: bool = False,
+        class_to_idx: dict[str, int] | None = None,
     ) -> None:
         """Initializes the dataset by scanning split folders."""
         self.processed_dir = Path(processed_dir)
@@ -224,18 +225,27 @@ class FolderSplitDataset(Dataset):
             raise FileNotFoundError(f"Split folder not found: {split_dir}")
 
         class_dirs = sorted([p for p in split_dir.iterdir() if p.is_dir()])
-        self.classes = [p.name for p in class_dirs]
-        self.class_to_idx: dict[str, int] = {c: i for i, c in enumerate(self.classes)}
 
-        self.samples: list[tuple[Path, int]] = sorted(
-            [
-                (img_path, self.class_to_idx[cls])
-                for cls in self.classes
-                for img_path in (split_dir / cls).rglob("*")
-                if img_path.is_file() and img_path.suffix.lower() in exts
-            ],
-            key=lambda x: str(x[0]),
-        )
+        if class_to_idx is None:
+            self.classes = [p.name for p in class_dirs]
+            self.class_to_idx = {c: i for i, c in enumerate(self.classes)}
+        else:
+            # Reuse a shared mapping (e.g., from the train split) so label indices stay aligned.
+            self.class_to_idx = class_to_idx
+            self.classes = list(class_to_idx.keys())
+
+        samples: list[tuple[Path, int]] = []
+        for cls_dir in class_dirs:
+            cls_name = cls_dir.name
+            if cls_name not in self.class_to_idx:
+                # Skip classes not present in the shared mapping (e.g., rare classes kept only in train).
+                continue
+            label_idx = self.class_to_idx[cls_name]
+            for img_path in cls_dir.rglob("*"):
+                if img_path.is_file() and img_path.suffix.lower() in exts:
+                    samples.append((img_path, label_idx))
+
+        self.samples = sorted(samples, key=lambda x: str(x[0]))
 
     def __len__(self) -> int:
         """Returns the total number of samples."""
@@ -274,25 +284,37 @@ def make_dataloaders(
         )
 
     transform = get_official_transform(config.arch)
-    splits = ["train", "validation", "test"]
-    datasets = {s: FolderSplitDataset(config.processed_dir, s, transform=transform) for s in splits}
+
+    # Build train dataset first to establish a stable class_to_idx mapping.
+    train_dataset = FolderSplitDataset(config.processed_dir, "train", transform=transform)
+    shared_class_to_idx = train_dataset.class_to_idx
+
+    datasets = {
+        "train": train_dataset,
+        "validation": FolderSplitDataset(
+            config.processed_dir, "validation", transform=transform, class_to_idx=shared_class_to_idx
+        ),
+        "test": FolderSplitDataset(
+            config.processed_dir, "test", transform=transform, class_to_idx=shared_class_to_idx
+        ),
+    }
 
     persistent = config.persistent_workers and config.num_workers > 0
 
     loaders = []
-    for s in splits:
+    for split_name, ds in datasets.items():
         loaders.append(
             DataLoader(
-                datasets[s],
+                ds,
                 batch_size=config.batch_size,
-                shuffle=(s == "train"),
+                shuffle=(split_name == "train"),
                 num_workers=config.num_workers,
                 pin_memory=config.pin_memory,
                 persistent_workers=persistent,
             )
         )
 
-    return (*loaders, datasets["train"].class_to_idx)
+    return (*loaders, shared_class_to_idx)
 
 
 # ============================================================
