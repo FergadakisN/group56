@@ -8,6 +8,7 @@ mixed-precision training (AMP), validation, and checkpointing.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import random
 from dataclasses import dataclass
@@ -24,6 +25,33 @@ from torch.utils.data import DataLoader
 
 from .data import DataConfig, make_dataloaders
 from .model import build_resnet
+
+logger = logging.getLogger(__name__)
+
+
+def _setup_logging(run_name: str, out_dir: str) -> None:
+    """Configure logging to file and console."""
+
+    log_dir = Path(out_dir) / run_name
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "training.log"
+
+    logger.handlers.clear()
+    logger.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
 
 # ============================================================
 # CONFIGS
@@ -67,6 +95,7 @@ def set_seed(seed: int) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+    logger.info(f"Set random seed to {seed}")
 
 
 def resolve_device(device: str) -> torch.device:
@@ -91,7 +120,9 @@ def resolve_device(device: str) -> torch.device:
         return torch.device("cuda")
     if torch.backends.mps.is_available():
         return torch.device("mps")
-    return torch.device("cpu")
+    resolved = torch.device("cpu")
+    logger.debug(f"Resolved device '{device}' to {resolved}")
+    return resolved
 
 
 def save_checkpoint(
@@ -102,17 +133,8 @@ def save_checkpoint(
     arch: str,
     num_classes: int,
 ) -> None:
-    """
-    Saves the model state and metadata to a checkpoint file.
+    """Save the model state and metadata to a checkpoint file."""
 
-    Args:
-        path: Destination Path for the checkpoint.
-        model: The model whose state_dict will be saved.
-        class_to_idx: Mapping of class names to indices.
-        epoch: The current epoch index.
-        arch: The architecture name string.
-        num_classes: Number of classes in the classifier head.
-    """
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
@@ -124,6 +146,7 @@ def save_checkpoint(
         },
         path,
     )
+    logger.debug(f"Saved checkpoint to {path} at epoch {epoch}")
 
 
 # ============================================================
@@ -252,8 +275,14 @@ def main(
     """
     Starts the training and validation process via the command line.
     """
+    # Setup logging
+    _setup_logging(run_name, out_dir)
+    logger.info("=== Starting Training ===")
+    logger.info(f"Run name: {run_name}, Output dir: {out_dir}")
+
     # Load optional JSON config overrides
     if config_path:
+        logger.info(f"Loading config from {config_path}")
         with open(config_path) as f:
             cfg_json = json.load(f)
         processed_dir = cfg_json.get("processed_dir", processed_dir)
@@ -276,7 +305,10 @@ def main(
 
     set_seed(seed)
     dev = resolve_device(device)
-    typer.echo(f"Using device: {dev}")
+    logger.info(f"Using device: {dev}")
+
+    # W&B init
+    logger.debug("Initializing Weights & Biases")
 
     # W&B init
     run = wandb.init(
@@ -311,6 +343,7 @@ def main(
         unfreeze_from = None
 
     # Data Initialization
+    logger.info(f"Loading data from {processed_dir}")
     data_cfg = DataConfig(
         processed_dir=processed_dir,
         arch=arch,
@@ -319,8 +352,10 @@ def main(
     )
     train_loader, val_loader, _, class_to_idx = make_dataloaders(data_cfg)
     num_classes = len(class_to_idx)
+    logger.info(f"Loaded {num_classes} classes: {list(class_to_idx.keys())[:5]}...")
 
     # Model Initialization
+    logger.info(f"Building {arch} model with {num_classes} classes")
     model = build_resnet(
         num_classes=num_classes,
         arch=arch,
@@ -328,8 +363,11 @@ def main(
         freeze_backbone=freeze_backbone,
         unfreeze_from=unfreeze_from,
     ).to(dev)
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    logger.info(f"Model created with {trainable_params:,} trainable parameters")
 
     # Optimization Setup
+    logger.debug(f"Optimizer setup: lr={lr}, weight_decay={weight_decay}")
     criterion = nn.CrossEntropyLoss(label_smoothing=0.0)
     optimizer = AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
@@ -347,6 +385,7 @@ def main(
     best_val_acc = -1.0
 
     # Training Loop
+    logger.info(f"Starting training for {epochs} epochs")
     # [Image of deep learning training process flowchart]
     for epoch in range(1, epochs + 1):
         tr_loss, tr_acc = train_one_epoch(
@@ -366,11 +405,12 @@ def main(
             device=dev,
         )
 
-        typer.echo(
+        epoch_msg = (
             f"Epoch {epoch:02d}/{epochs} | "
             f"tr_loss: {tr_loss:.4f} | tr_acc: {tr_acc:.4f} | "
             f"va_loss: {va_loss:.4f} | va_acc: {va_acc:.4f}"
         )
+        logger.info(epoch_msg)
 
         wandb.log(
             {
@@ -401,12 +441,14 @@ def main(
                 arch=arch,
                 num_classes=num_classes,
             )
-            typer.echo(f"New best: {best_ckpt} (acc={best_val_acc:.4f})")
+            logger.info(f"New best checkpoint: {best_ckpt} (acc={best_val_acc:.4f})")
 
         wandb.summary["best_val_acc"] = best_val_acc
     wandb.summary["best_epoch"] = epoch
 
-    typer.echo("Training process complete.")
+    logger.info("Training process complete.")
+    logger.info(f"Best validation accuracy: {best_val_acc:.4f}")
+    logger.info(f"Checkpoints saved to {out_path}")
     run.finish()
 
 

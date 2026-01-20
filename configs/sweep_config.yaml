@@ -1,0 +1,25 @@
+program: src/group_56/train.py
+
+command:
+  - ${env}
+  - python
+  - src/group_56/train.py
+
+method: grid  # Can be: grid, random, bayes
+metric:
+  name: val/acc
+  goal: maximize
+
+parameters:
+  arch:
+    values: ["resnet18", "resnet34"]
+  lr:
+    values: [1e-4, 3e-4, 1e-3]
+  weight_decay:
+    values: [1e-5, 1e-4, 1e-3]
+  batch_size:
+    values: [16, 32, 64]
+  freeze_backbone:
+    values: [true, false]
+  epochs:
+    value: 15
