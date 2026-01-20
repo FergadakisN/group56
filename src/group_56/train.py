@@ -18,9 +18,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import typer
-import wandb
 from torch.optim import AdamW, Optimizer
 from torch.utils.data import DataLoader
+
+import wandb
 
 from .data import DataConfig, make_dataloaders
 from .model import build_resnet
@@ -279,7 +280,7 @@ def main(
     typer.echo(f"Using device: {dev}")
 
     # W&B init
-    wandb.init(
+    run = wandb.init(
         project="group56-fish",  # change to your project name
         name=run_name,
         config={
@@ -299,7 +300,7 @@ def main(
         },
     )
 
-    cfg = wandb.config
+    cfg = run.config
     lr = cfg.get("lr", lr)
     batch_size = cfg.get("batch_size", batch_size)
     weight_decay = cfg.get("weight_decay", weight_decay)
@@ -407,7 +408,7 @@ def main(
     wandb.summary["best_epoch"] = epoch
 
     typer.echo("Training process complete.")
-    wandb.finish()
+    run.finish()
 
 
 if __name__ == "__main__":

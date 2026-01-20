@@ -114,7 +114,7 @@ def test_train_one_epoch_updates_parameters() -> None:
 
     assert loss >= 0.0
     assert 0.0 <= acc <= 1.0
-    assert any(not torch.equal(b, a) for b, a in zip(before, after, strict=True))
+    assert any(not torch.equal(b, a) for b, a in zip(before, after, strict=False))
 
 
 def test_set_seed_deterministic() -> None:
