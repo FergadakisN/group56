@@ -5,8 +5,6 @@ Tests cover health endpoints, model info, and prediction endpoints.
 """
 
 import io
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 import torch

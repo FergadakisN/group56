@@ -1,0 +1,111 @@
+name: Model Registry Workflow
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'models/**'
+      - '.github/workflows/model-registry.yaml'
+  workflow_dispatch:
+    inputs:
+      model_path:
+        description: 'Optional model path to validate (overrides detection)'
+        required: false
+        default: ''
+
+concurrency:
+  group: model-registry-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  registry-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed model files
+        id: detect
+        run: |
+          echo "event: ${{ github.event_name }}"
+          MODEL_INPUT="${{ github.event.inputs.model_path }}"
+          if [ -n "$MODEL_INPUT" ]; then
+            echo "model_path=$MODEL_INPUT" >> $GITHUB_OUTPUT
+            echo "changed_files=$MODEL_INPUT" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+          if [ -z "$BEFORE" ]; then
+            BEFORE="HEAD~1"
+          fi
+
+          CHANGED=$(git diff --name-only "$BEFORE" "$AFTER" | grep '^models/' || true)
+          if [ -z "$CHANGED" ]; then
+            echo "No model changes detected." && exit 0
+          fi
+
+          # Prefer newest file under models/
+          LATEST=$(printf "%s\n" $CHANGED | tail -n 1)
+          echo "Changed model files:\n$CHANGED"
+          echo "model_path=$LATEST" >> $GITHUB_OUTPUT
+          echo "changed_files=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Set up Python
+        if: steps.detect.outputs.model_path != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        if: steps.detect.outputs.model_path != ''
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Run fast API smoke tests
+        if: steps.detect.outputs.model_path != ''
+        run: |
+          python -m pytest tests/test_api.py -k "test_root_endpoint or test_predict_with_valid_image" -v
+
+      - name: Summarize change
+        if: steps.detect.outputs.model_path != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changed = `${{ toJSON(steps.detect.outputs.changed_files || '') }}`.replace(/^"|"$/g, '');
+            const modelPath = `${{ toJSON(steps.detect.outputs.model_path || '') }}`.replace(/^"|"$/g, '');
+            const body = [
+              '## Model Registry Update',
+              '',
+              `- Changed files:\n\n${changed || 'n/a'}`,
+              `- Selected model path: ${modelPath || 'n/a'}`,
+              '',
+              '**Actions run**:',
+              '- ✅ API smoke tests (root, predict)'
+            ].join('\n');
+
+            if (context.payload.pull_request) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            } else {
+              await github.rest.repos.createCommitComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.sha,
+                body,
+              });
+            }
