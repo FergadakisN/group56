@@ -1,0 +1,60 @@
+steps:
+  # --- IMAGE 1: TRAINING ---
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build Training Image"
+    # Added environment variable to enable BuildKit for --mount support
+    env:
+      - "DOCKER_BUILDKIT=1"
+    args:
+      [
+        "build",
+        ".",
+        "-t",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/train-image:native",
+        "-f",
+        "dockerfiles/train.dockerfile",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push Training Image"
+    args:
+      [
+        "push",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/train-image:native",
+      ]
+
+  # --- IMAGE 2: EVALUATION ---
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build Eval Image"
+    # Added environment variable to enable BuildKit for --mount support
+    env:
+      - "DOCKER_BUILDKIT=1"
+    args:
+      [
+        "build",
+        ".",
+        "-t",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evaluate-image:native",
+        "-f",
+        "dockerfiles/evaluate.dockerfile",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push Eval Image"
+    args:
+      [
+        "push",
+        "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evaluate-image:native",
+      ]
+
+# This section helps GCP track and display the images in the Build History UI
+images:
+  - "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/train-image:native"
+  - "${_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/evaluate-image:native"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _LOCATION: "europe-west1"
+  _REPOSITORY: "fish" # Remember to use 'fish' based on your gcloud output earlier

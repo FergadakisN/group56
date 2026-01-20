@@ -1,0 +1,28 @@
+steps:
+# Step 1: Build the Docker image
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Build container image'
+  args: [
+    'build',
+    '.',
+    '-t',
+    'europe-west1-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:latest',
+    '-f',
+    'Dockerfile'
+  ]
+
+# Step 2: Push the image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Push container image'
+  args: [
+    'push',
+    'europe-west1-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE_NAME}:latest'
+  ]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _LOCATION: 'europe-west1'
+  _REPOSITORY: 'fish-repo'
+  _IMAGE_NAME: 'fish-classifier'

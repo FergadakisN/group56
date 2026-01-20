@@ -34,5 +34,6 @@ tzdata==2025.3
 uvicorn==0.34.2
 dvc
 dvc-gdrive
+dvc-gs
 pydrive2
-wandb
+wandb==0.24.0
