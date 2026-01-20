@@ -294,9 +294,7 @@ def make_dataloaders(
         "validation": FolderSplitDataset(
             config.processed_dir, "validation", transform=transform, class_to_idx=shared_class_to_idx
         ),
-        "test": FolderSplitDataset(
-            config.processed_dir, "test", transform=transform, class_to_idx=shared_class_to_idx
-        ),
+        "test": FolderSplitDataset(config.processed_dir, "test", transform=transform, class_to_idx=shared_class_to_idx),
     }
 
     persistent = config.persistent_workers and config.num_workers > 0
