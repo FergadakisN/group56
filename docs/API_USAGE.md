@@ -218,17 +218,17 @@ def predict_fish(image_path: str, top_k: int = 3) -> dict:
             files={"file": (Path(image_path).name, f, "image/jpeg")},
             params={"top_k": top_k}
         )
-    
+
     response.raise_for_status()
     return response.json()
 
 if __name__ == "__main__":
     import sys
-    
+
     if len(sys.argv) < 2:
         print("Usage: python client.py <image_path>")
         sys.exit(1)
-    
+
     result = predict_fish(sys.argv[1])
     print(f"Predicted: {result['predicted_class']}")
     print(f"Confidence: {result['confidence']:.2%}")

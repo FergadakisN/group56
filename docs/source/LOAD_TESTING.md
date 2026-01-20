@@ -358,10 +358,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: pip install locust
-      
+
       - name: Run load test
         run: |
           locust -f tests/load_test.py \
@@ -371,7 +371,7 @@ jobs:
             --run-time ${{ github.event.inputs.duration }} \
             --headless \
             --html load_test_report.html
-      
+
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:

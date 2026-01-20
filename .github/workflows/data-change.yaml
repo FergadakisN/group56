@@ -28,7 +28,7 @@ jobs:
     outputs:
       data_changed: ${{ steps.check.outputs.changed }}
       changed_files: ${{ steps.check.outputs.files }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
         run: |
           # Check if any .dvc files changed in the last commit
           changed_files=$(git diff --name-only HEAD~1 HEAD | grep '\.dvc$' || true)
-          
+
           if [ -n "$changed_files" ] || [ "${{ github.event.inputs.force_retrain }}" == "true" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -100,7 +100,7 @@ jobs:
         run: |
           # Create unique run name with timestamp
           RUN_NAME="auto_retrain_$(date +%Y%m%d_%H%M%S)"
-          
+
           # Train with W&B logging
           python -m group_56.train \
             --run-name "$RUN_NAME" \
@@ -115,7 +115,7 @@ jobs:
         run: |
           # Find the latest checkpoint
           LATEST_MODEL=$(ls -t outputs/*/best.pt | head -1)
-          
+
           # Run evaluation
           python -m group_56.evaluate \
             --checkpoint "$LATEST_MODEL" \
@@ -133,12 +133,12 @@ jobs:
         run: |
           LATEST_MODEL=$(ls -t outputs/*/best.pt | head -1)
           MODEL_DIR=$(dirname "$LATEST_MODEL")
-          
+
           # Extract metrics from training
           if [ -f "$MODEL_DIR/metrics.json" ]; then
             cat "$MODEL_DIR/metrics.json"
           fi
-          
+
           echo "model_path=$LATEST_MODEL" >> $GITHUB_OUTPUT
 
       - name: Comment on commit with results
@@ -149,9 +149,9 @@ jobs:
             const fs = require('fs');
             const modelPath = '${{ steps.metadata.outputs.model_path }}';
             const modelDir = require('path').dirname(modelPath);
-            
+
             let metricsText = 'Model retrained successfully!';
-            
+
             // Try to read metrics if available
             try {
               const metricsFile = `${modelDir}/metrics.json`;
@@ -159,16 +159,16 @@ jobs:
                 const metrics = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
                 metricsText = `
             ## 📊 Model Retraining Complete
-            
+
             **Triggered by data changes:**
             \`\`\`
             ${{ needs.detect-changes.outputs.changed_files }}
             \`\`\`
-            
+
             **Model Performance:**
             - Accuracy: ${(metrics.accuracy * 100).toFixed(2)}%
             - Model path: \`${modelPath}\`
-            
+
             **Next Steps:**
             - Review metrics in W&B
             - Deploy to staging if performance is acceptable
@@ -178,7 +178,7 @@ jobs:
             } catch (e) {
               console.log('Could not read metrics:', e);
             }
-            
+
             github.rest.repos.createCommitComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
