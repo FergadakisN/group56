@@ -1,0 +1,206 @@
+name: Data Change Workflow
+
+# Triggers when data changes are detected via DVC
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/**.dvc'
+      - 'data/.gitignore'
+      - '.dvc/**'
+  workflow_dispatch:
+    inputs:
+      force_retrain:
+        description: 'Force complete retraining'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: '3.12'
+  WANDB_PROJECT: fish-classifier
+
+jobs:
+  detect-changes:
+    name: Detect Data Changes
+    runs-on: ubuntu-latest
+    outputs:
+      data_changed: ${{ steps.check.outputs.changed }}
+      changed_files: ${{ steps.check.outputs.files }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for DVC file changes
+        id: check
+        run: |
+          # Check if any .dvc files changed in the last commit
+          changed_files=$(git diff --name-only HEAD~1 HEAD | grep '\.dvc$' || true)
+          
+          if [ -n "$changed_files" ] || [ "${{ github.event.inputs.force_retrain }}" == "true" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "files<<EOF" >> $GITHUB_OUTPUT
+            echo "$changed_files" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "📊 Data changes detected:"
+            echo "$changed_files"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No data changes detected"
+          fi
+
+  retrain-model:
+    name: Retrain Model
+    needs: detect-changes
+    if: needs.detect-changes.outputs.data_changed == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Configure DVC
+        env:
+          GCS_CREDENTIALS: ${{ secrets.GCS_CREDENTIALS }}
+        run: |
+          # Set up DVC remote credentials
+          mkdir -p ~/.config/gcloud
+          echo "$GCS_CREDENTIALS" > ~/.config/gcloud/application_default_credentials.json
+          export GOOGLE_APPLICATION_CREDENTIALS=~/.config/gcloud/application_default_credentials.json
+
+      - name: Pull data from DVC
+        run: |
+          dvc pull
+
+      - name: Login to Weights & Biases
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          wandb login $WANDB_API_KEY
+
+      - name: Train model
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          # Create unique run name with timestamp
+          RUN_NAME="auto_retrain_$(date +%Y%m%d_%H%M%S)"
+          
+          # Train with W&B logging
+          python -m group_56.train \
+            --run-name "$RUN_NAME" \
+            --epochs 30 \
+            --batch-size 32 \
+            --lr 0.001 \
+            --arch resnet18 \
+            --pretrained \
+            --device auto
+
+      - name: Evaluate model
+        run: |
+          # Find the latest checkpoint
+          LATEST_MODEL=$(ls -t outputs/*/best.pt | head -1)
+          
+          # Run evaluation
+          python -m group_56.evaluate \
+            --checkpoint "$LATEST_MODEL" \
+            --split test
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrained-model-${{ github.sha }}
+          path: outputs/**/best.pt
+          retention-days: 30
+
+      - name: Create model metadata
+        id: metadata
+        run: |
+          LATEST_MODEL=$(ls -t outputs/*/best.pt | head -1)
+          MODEL_DIR=$(dirname "$LATEST_MODEL")
+          
+          # Extract metrics from training
+          if [ -f "$MODEL_DIR/metrics.json" ]; then
+            cat "$MODEL_DIR/metrics.json"
+          fi
+          
+          echo "model_path=$LATEST_MODEL" >> $GITHUB_OUTPUT
+
+      - name: Comment on commit with results
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const modelPath = '${{ steps.metadata.outputs.model_path }}';
+            const modelDir = require('path').dirname(modelPath);
+            
+            let metricsText = 'Model retrained successfully!';
+            
+            // Try to read metrics if available
+            try {
+              const metricsFile = `${modelDir}/metrics.json`;
+              if (fs.existsSync(metricsFile)) {
+                const metrics = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
+                metricsText = `
+            ## 📊 Model Retraining Complete
+            
+            **Triggered by data changes:**
+            \`\`\`
+            ${{ needs.detect-changes.outputs.changed_files }}
+            \`\`\`
+            
+            **Model Performance:**
+            - Accuracy: ${(metrics.accuracy * 100).toFixed(2)}%
+            - Model path: \`${modelPath}\`
+            
+            **Next Steps:**
+            - Review metrics in W&B
+            - Deploy to staging if performance is acceptable
+            - Update production model after validation
+                `;
+              }
+            } catch (e) {
+              console.log('Could not read metrics:', e);
+            }
+            
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: metricsText
+            });
+
+  notify:
+    name: Notify Team
+    needs: [detect-changes, retrain-model]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send notification
+        run: |
+          if [ "${{ needs.retrain-model.result }}" == "success" ]; then
+            echo "✅ Model retraining completed successfully"
+            # Add Slack/email notification here if needed
+          elif [ "${{ needs.retrain-model.result }}" == "failure" ]; then
+            echo "❌ Model retraining failed"
+            # Add alert notification here
+          elif [ "${{ needs.detect-changes.outputs.data_changed }}" == "false" ]; then
+            echo "ℹ️ No data changes detected, skipping retraining"
+          fi

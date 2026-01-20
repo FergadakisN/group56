@@ -34,15 +34,6 @@ DEVICE: torch.device | None = None
 MODEL_INFO: dict[str, Any] = {}
 
 
-class PredictionResponse(BaseModel):
-    """Response model for classification predictions."""
-
-    predicted_class: str
-    confidence: float
-    top_k_predictions: list["TopKPrediction"]
-    model_arch: str
-
-
 class TopKPrediction(BaseModel):
     """Item model for top-k predictions."""
 
@@ -52,6 +43,15 @@ class TopKPrediction(BaseModel):
     model_config = {
         "populate_by_name": True,
     }
+
+
+class PredictionResponse(BaseModel):
+    """Response model for classification predictions."""
+
+    predicted_class: str
+    confidence: float
+    top_k_predictions: list[TopKPrediction]
+    model_arch: str
 
 
 class HealthResponse(BaseModel):
@@ -212,7 +212,7 @@ async def model_info() -> ModelInfoResponse:
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(
-    file: UploadFile = File(..., description="Image file for classification"),
+    file: UploadFile = File(..., description="Image file for classification"),  # noqa: B008
     top_k: int = 5,
 ) -> PredictionResponse:
     """
@@ -257,7 +257,7 @@ async def predict(
 
         top_k_predictions = [
             TopKPrediction(class_name=IDX_TO_CLASS[idx.item()], confidence=prob.item())
-            for prob, idx in zip(top_k_probs, top_k_indices)
+            for prob, idx in zip(top_k_probs, top_k_indices, strict=True)
         ]
 
         # Get top prediction
@@ -276,7 +276,7 @@ async def predict(
 
     except Exception as e:
         logger.error(f"Prediction error: {e}")
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}") from e
 
 
 @app.post("/model/load")
@@ -301,7 +301,7 @@ async def load_model_endpoint(checkpoint_path: str) -> JSONResponse:
         )
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}") from e
 
 
 if __name__ == "__main__":

@@ -16,3 +16,6 @@ mkdocstrings-python==1.16.10
 
 # ml experiment tracking / tuning
 wandb==0.24.0
+
+# load testing
+locust==2.32.5
