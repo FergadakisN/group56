@@ -39,6 +39,7 @@ jobs:
       - name: Run tests & coverage
         env:
           WANDB_MODE: disabled
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
         run: |
           python -m coverage run -m pytest -q
           python -m coverage report -m
