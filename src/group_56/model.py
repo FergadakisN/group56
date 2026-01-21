@@ -9,7 +9,7 @@ fine-tuning strategies.
 from __future__ import annotations
 
 import torch.nn as nn
-from torchvision import models
+from torchvision import models  # type: ignore[import-untyped]
 
 
 def build_resnet(
