@@ -12,13 +12,14 @@ import os
 import subprocess
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import torch
 import torch.nn as nn
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse
 from PIL import Image
 from pydantic import BaseModel, Field
 from google.cloud import storage
@@ -27,6 +28,7 @@ from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily
 from prometheus_client.asgi import make_asgi_app
 
 from .data import get_official_transform
+from .extract_features import extract_image_features, features_to_csv_row, get_csv_header
 from .model import build_resnet
 
 # Configure logging
@@ -60,6 +62,7 @@ CLASS_TO_IDX: dict[str, int] | None = None
 IDX_TO_CLASS: dict[int, str] | None = None
 DEVICE: torch.device | None = None
 MODEL_INFO: dict[str, Any] = {}
+PREDICTION_DATABASE_PATH = Path("prediction_database.csv")
 
 
 class TopKPrediction(BaseModel):
@@ -198,6 +201,63 @@ def download_model_with_gsutil(bucket_path: str, local_path: str | Path) -> bool
         return False
 
 
+def log_prediction_to_csv(image: Image.Image, predicted_class: str) -> None:
+    """
+    Log prediction data to CSV file for drift detection.
+
+    This function extracts image features and appends them along with the
+    prediction and timestamp to a CSV database. This data can later be used
+    to detect data drift.
+
+    Args:
+        image: PIL Image object that was classified
+        predicted_class: The predicted class name
+    """
+    try:
+        # Extract features from image
+        features = extract_image_features(image)
+
+        # Get current timestamp
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        # Create CSV row
+        csv_row = features_to_csv_row(features, timestamp, predicted_class)
+
+        # Write to file (create with header if doesn't exist)
+        if not PREDICTION_DATABASE_PATH.exists():
+            with open(PREDICTION_DATABASE_PATH, "w") as f:
+                f.write(get_csv_header() + "\n")
+                f.write(csv_row + "\n")
+        else:
+            with open(PREDICTION_DATABASE_PATH, "a") as f:
+                f.write(csv_row + "\n")
+
+        logger.info(f"Logged prediction to {PREDICTION_DATABASE_PATH}")
+
+    except Exception as e:
+        # Don't fail prediction if logging fails
+        logger.error(f"Failed to log prediction: {e}")
+
+
+def save_to_gcs(local_path: Path, bucket_name: str, object_name: str) -> None:
+    """
+    Upload local file to GCS bucket as backup.
+
+    Args:
+        local_path: Local file path
+        bucket_name: GCS bucket name
+        object_name: Object path in bucket
+    """
+    try:
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(object_name)
+        blob.upload_from_filename(str(local_path))
+        logger.info(f"Uploaded {local_path} to gs://{bucket_name}/{object_name}")
+    except Exception as e:
+        logger.warning(f"Failed to backup prediction database to GCS: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
@@ -270,6 +330,8 @@ async def root() -> RootResponse:
             "health": "/health",
             "predict": "/predict (POST)",
             "model_info": "/model/info",
+            "monitoring": "/monitoring",
+            "metrics": "/metrics",
         },
     )
 
@@ -300,6 +362,7 @@ async def model_info() -> ModelInfoResponse:
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(..., description="Image file for classification"),  # noqa: B008
     top_k: int = 5,
 ) -> PredictionResponse:
@@ -307,6 +370,7 @@ async def predict(
     Predict fish species from an uploaded image.
 
     Args:
+        background_tasks: FastAPI background tasks for async logging
         file: Uploaded image file (JPEG, PNG).
         top_k: Number of top predictions to return.
 
@@ -359,6 +423,23 @@ async def predict(
         confidence = top_k_probs[0].item()
 
         logger.info(f"Prediction: {predicted_class} (confidence: {confidence:.4f})")
+
+        # Log prediction as background task (non-blocking)
+        background_tasks.add_task(log_prediction_to_csv, image, predicted_class)
+
+        # Optionally backup to GCS every 10 predictions
+        if PREDICTION_DATABASE_PATH.exists():
+            with open(PREDICTION_DATABASE_PATH) as f:
+                line_count = sum(1 for _ in f) - 1  # Subtract header
+            if line_count % 10 == 0 and line_count > 0:
+                gcs_bucket = os.getenv("GCS_BUCKET", "fish_mlops")
+                background_tasks.add_task(
+                    save_to_gcs,
+                    PREDICTION_DATABASE_PATH,
+                    gcs_bucket,
+                    "monitoring/prediction_database.csv",
+                )
+
         prediction_latency.observe(time.time() - start_time)
 
         return PredictionResponse(
@@ -401,6 +482,100 @@ async def load_model_endpoint(checkpoint_path: str) -> JSONResponse:
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}") from e
+
+
+@app.get("/monitoring", response_class=HTMLResponse)
+async def monitoring_endpoint(n_latest: int = 100):
+    """
+    Generate data drift monitoring report.
+
+    This endpoint analyzes the logged predictions and generates an HTML report
+    showing data drift, data quality, and target drift metrics.
+
+    Args:
+        n_latest: Number of latest predictions to analyze (default: 100)
+
+    Returns:
+        HTML report from Evidently
+    """
+    from fastapi.responses import HTMLResponse
+    from .data_drift import load_current_data, load_reference_data, generate_drift_report
+
+    try:
+        # Check if prediction database exists
+        if not PREDICTION_DATABASE_PATH.exists():
+            return HTMLResponse(
+                content="""
+                <html>
+                <head><title>Monitoring - No Data</title></head>
+                <body>
+                    <h1>No Prediction Data Available</h1>
+                    <p>The prediction database is empty. Make some predictions first:</p>
+                    <pre>curl -X POST http://localhost:8000/predict -F file=@image.jpg</pre>
+                </body>
+                </html>
+                """,
+                status_code=200,
+            )
+
+        # Load data
+        logger.info(f"Loading prediction data (latest {n_latest} entries)")
+        current_data = load_current_data(str(PREDICTION_DATABASE_PATH), n_latest=n_latest)
+
+        if len(current_data) < 10:
+            return HTMLResponse(
+                content=f"""
+                <html>
+                <head><title>Monitoring - Insufficient Data</title></head>
+                <body>
+                    <h1>Insufficient Data for Drift Detection</h1>
+                    <p>Only {len(current_data)} predictions logged. Need at least 10 for meaningful analysis.</p>
+                    <p>Make more predictions to enable drift detection.</p>
+                </body>
+                </html>
+                """,
+                status_code=200,
+            )
+
+        # For reference data, use the current data split in half
+        # (first half as reference, second half as current)
+        # In production, you'd load actual training data features
+        split_idx = len(current_data) // 2
+        reference_data = current_data.iloc[:split_idx].copy()
+        current_data_subset = current_data.iloc[split_idx:].copy()
+
+        logger.info(f"Running drift detection: {len(reference_data)} ref, {len(current_data_subset)} current")
+
+        # Generate report in memory
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
+            report_path = tmp.name
+
+        report = generate_drift_report(reference_data, current_data_subset, output_path=report_path)
+
+        # Read and return HTML
+        with open(report_path) as f:
+            html_content = f.read()
+
+        # Cleanup
+        Path(report_path).unlink()
+
+        return HTMLResponse(content=html_content, status_code=200)
+
+    except Exception as e:
+        logger.error(f"Monitoring endpoint error: {e}")
+        return HTMLResponse(
+            content=f"""
+            <html>
+            <head><title>Monitoring Error</title></head>
+            <body>
+                <h1>Error Generating Monitoring Report</h1>
+                <p>Error: {str(e)}</p>
+            </body>
+            </html>
+            """,
+            status_code=500,
+        )
 
 
 if __name__ == "__main__":
