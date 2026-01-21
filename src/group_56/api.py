@@ -10,6 +10,7 @@ import io
 import logging
 import os
 import subprocess
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,9 @@ from fastapi.responses import JSONResponse
 from PIL import Image
 from pydantic import BaseModel, Field
 from google.cloud import storage
+from prometheus_client import Counter, Histogram, generate_latest, REGISTRY, CollectorRegistry
+from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily
+from prometheus_client.asgi import make_asgi_app
 
 from .data import get_official_transform
 from .model import build_resnet
@@ -28,6 +32,27 @@ from .model import build_resnet
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize Prometheus metrics
+request_count = Counter(
+    "fish_api_requests_total",
+    "Total number of requests to the API",
+    ["method", "endpoint"],
+)
+error_count = Counter(
+    "fish_api_errors_total",
+    "Total number of errors in the API",
+    ["method", "endpoint", "error_type"],
+)
+prediction_latency = Histogram(
+    "fish_api_prediction_latency_seconds",
+    "Time taken to make predictions in seconds",
+    buckets=(0.01, 0.05, 0.1, 0.5, 1.0, 2.5, 5.0),
+)
+model_load_time = Histogram(
+    "fish_api_model_load_time_seconds",
+    "Time taken to load the model in seconds",
+)
 
 # Global model and metadata
 MODEL: nn.Module | None = None
@@ -176,7 +201,8 @@ def download_model_with_gsutil(bucket_path: str, local_path: str | Path) -> bool
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
-    # Startup: Load model
+    # Startup: Load model with timing metrics
+    start_time = time.time()
     try:
         # Try to download from GCS if BUCKET_NAME env var is set
         gcs_bucket = os.getenv("GCS_BUCKET", "fish_mlops")
@@ -220,6 +246,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Mount Prometheus metrics endpoint
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 
 class RootResponse(BaseModel):
@@ -286,11 +316,16 @@ async def predict(
     Raises:
         HTTPException: If model not loaded or invalid image.
     """
+    request_count.labels(method="POST", endpoint="/predict").inc()
+    start_time = time.time()
+
     if MODEL is None or IDX_TO_CLASS is None or DEVICE is None:
+        error_count.labels(method="POST", endpoint="/predict", error_type="ModelNotLoaded").inc()
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     # Validate file type
     if not file.content_type or not file.content_type.startswith("image/"):
+        error_count.labels(method="POST", endpoint="/predict", error_type="InvalidFileType").inc()
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
@@ -324,6 +359,7 @@ async def predict(
         confidence = top_k_probs[0].item()
 
         logger.info(f"Prediction: {predicted_class} (confidence: {confidence:.4f})")
+        prediction_latency.observe(time.time() - start_time)
 
         return PredictionResponse(
             predicted_class=predicted_class,
@@ -332,8 +368,13 @@ async def predict(
             model_arch=arch,
         )
 
+    except HTTPException:
+        prediction_latency.observe(time.time() - start_time)
+        raise
     except Exception as e:
+        error_count.labels(method="POST", endpoint="/predict", error_type="PredictionError").inc()
         logger.error(f"Prediction error: {e}")
+        prediction_latency.observe(time.time() - start_time)
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}") from e
 
 
