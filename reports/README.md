@@ -423,7 +423,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
---- question 21 fill here ---
+--- [this figure](figures/question_21_build_images.png) ---
 
 ### Question 22
 
