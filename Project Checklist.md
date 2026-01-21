@@ -47,8 +47,8 @@
 
 ### Week 2 SKIPPED tasks
 
-- Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25)
-- Create a frontend for your API (M26)
+- Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25) ❌
+- Create a frontend for your API (M26) ❌
 
 ## Week 3
 
@@ -68,8 +68,8 @@
 #### Extra
 
 - Write some documentation for your application (M32) ✅
-- Publish the documentation to GitHub Pages (M32) ❌
+- Publish the documentation to GitHub Pages (M32) ❌ -- **TO-DO**
 - Revisit your initial project description. Did the project turn out as you wanted? ✅
-- Create an architectural diagram over your MLOps pipeline ❌
+- Create an architectural diagram over your MLOps pipeline ❌ -- **TO-DO**
 - Make sure all group members have an understanding about all parts of the project ✅
 - Uploaded all your code to GitHub ✅
