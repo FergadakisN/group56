@@ -1761,6 +1761,7 @@ dependencies = [
     { name = "httpx" },
     { name = "idna" },
     { name = "jinja2" },
+    { name = "loguru" },
     { name = "markdown-it-py" },
     { name = "markupsafe" },
     { name = "mdurl" },
@@ -1828,6 +1829,7 @@ requires-dist = [
     { name = "invoke", marker = "extra == 'dev'", specifier = "==2.2.1" },
     { name = "jinja2", specifier = "==3.1.6" },
     { name = "locust", marker = "extra == 'dev'", specifier = "==2.32.5" },
+    { name = "loguru", specifier = "==0.7.2" },
     { name = "markdown-it-py", specifier = "==4.0.0" },
     { name = "markupsafe", specifier = "==3.0.3" },
     { name = "mdurl", specifier = "==0.1.2" },
@@ -2222,6 +2224,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/db/b5/1e651ad5328e9314bb7661b5fbe3156ce86dfb526d919a841b4e7738aa2b/locust-2.32.5.tar.gz", hash = "sha256:ea7bc1e8ce2520e8893c471b4b0a56a4f53b01b4b618adfe8d2c8ab2728b5821", size = 1196880, upload-time = "2024-12-23T08:57:27.453Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a1/f8/790fbbea760932d1b6f07a81580a7821d12bf000b147702fd25b449eb36e/locust-2.32.5-py3-none-any.whl", hash = "sha256:2f49509868ffc2e368be40921c6825f92147c84e997206760a85dab3058f5efb", size = 1214913, upload-time = "2024-12-23T08:57:24.924Z" },
+]
+
+[[package]]
+name = "loguru"
+version = "0.7.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9e/30/d87a423766b24db416a46e9335b9602b054a72b96a88a241f2b09b560fa8/loguru-0.7.2.tar.gz", hash = "sha256:e671a53522515f34fd406340ee968cb9ecafbc4b36c679da03c18fd8d0bd51ac", size = 145103, upload-time = "2023-09-11T15:24:37.926Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl", hash = "sha256:003d71e3d3ed35f0f8984898359d65b79e5b21943f78af86aa5491210429b8eb", size = 62549, upload-time = "2023-09-11T15:24:35.016Z" },
 ]
 
 [[package]]
@@ -5694,6 +5709,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5a/70/1469ef1d3542ae7c2c7b72bd5e3a4e6ee69d7978fa8a3af05a38eca5becf/werkzeug-3.1.5.tar.gz", hash = "sha256:6a548b0e88955dd07ccb25539d7d0cc97417ee9e179677d22c7041c8f078ce67", size = 864754, upload-time = "2026-01-08T17:49:23.247Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ad/e4/8d97cca767bcc1be76d16fb76951608305561c6e056811587f36cb1316a8/werkzeug-3.1.5-py3-none-any.whl", hash = "sha256:5111e36e91086ece91f93268bb39b4a35c1e6f1feac762c9c822ded0a4e322dc", size = 225025, upload-time = "2026-01-08T17:49:21.859Z" },
+]
+
+[[package]]
+name = "win32-setctime"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]
 
 [[package]]
