@@ -64,7 +64,7 @@ Coverage: All API endpoints
 - `httpx==0.27.2`: Required for TestClient
 - `python-multipart==0.0.9`: Required for file uploads
 
-### ✅ 3. Cloud Run Deployment (M23)
+### ✅ 3. Cloud Run Deployment (M23) - COMPLETED ✅
 
 **Implementation:**
 
@@ -83,6 +83,13 @@ Coverage: All API endpoints
   - Cloud Run deployment with production-ready settings
   - Smoke tests post-deployment
   - Service URL output
+
+**Live Deployment:**
+
+- **Service URL:** [https://fish-classifier-api-170418683866.us-central1.run.app](https://fish-classifier-api-170418683866.us-central1.run.app)
+- **Health Check:** `/health` endpoint responding correctly
+- **Deployment Method:** Manual using gcloud CLI + Docker build/push
+- **Status:** Fully operational (revision fish-classifier-api-00001-kzr)
 
 **Configuration:**
 

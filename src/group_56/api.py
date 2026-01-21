@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import io
 import logging
+import os
+import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -18,6 +20,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 from pydantic import BaseModel, Field
+from google.cloud import storage
 
 from .data import get_official_transform
 from .model import build_resnet
@@ -129,24 +132,79 @@ def load_model(checkpoint_path: str | Path = "models/best.pt") -> None:
     logger.info(f"Model loaded: {arch} with {num_classes} classes on {DEVICE}")
 
 
+def download_model_from_gcs(bucket: str, object_path: str, local_path: str | Path) -> bool:
+    """Download model checkpoint from Google Cloud Storage using the Python client."""
+
+    local_path = Path(local_path)
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        logger.info(f"Attempting to download model gs://{bucket}/{object_path}")
+        client = storage.Client()
+        blob = client.bucket(bucket).blob(object_path)
+        blob.download_to_filename(local_path)
+        logger.info(f"Successfully downloaded model to {local_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Error downloading model via google-cloud-storage: {e}")
+        return False
+
+
+def download_model_with_gsutil(bucket_path: str, local_path: str | Path) -> bool:
+    """Fallback downloader using gsutil if installed."""
+
+    local_path = Path(local_path)
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        result = subprocess.run(
+            ["gsutil", "cp", bucket_path, str(local_path)],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+        if result.returncode == 0:
+            logger.info(f"Successfully downloaded model to {local_path} using gsutil")
+            return True
+        logger.error(f"Failed to download model with gsutil: {result.stderr}")
+        return False
+    except Exception as e:
+        logger.error(f"Error downloading model with gsutil: {e}")
+        return False
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup: Load model
     try:
-        # Try multiple common checkpoint locations
-        checkpoint_paths = [
-            Path("models/best.pt"),
-            Path("outputs/resnet_run/best.pt"),
-            Path("best.pt"),
-        ]
+        # Try to download from GCS if BUCKET_NAME env var is set
+        gcs_bucket = os.getenv("GCS_BUCKET", "fish_mlops")
+        gcs_object = os.getenv("GCS_MODEL_OBJECT", "models/fish_classifier.pt")
+        gcs_model_path = f"gs://{gcs_bucket}/{gcs_object}"
+        local_model_path = Path("/tmp/fish_classifier.pt")
 
-        for ckpt_path in checkpoint_paths:
-            if ckpt_path.exists():
-                load_model(ckpt_path)
-                break
+        downloaded = download_model_from_gcs(gcs_bucket, gcs_object, local_model_path)
+        if not downloaded:
+            logger.warning("google-cloud-storage download failed, attempting gsutil fallback")
+            downloaded = download_model_with_gsutil(gcs_model_path, local_model_path)
+
+        if downloaded:
+            load_model(local_model_path)
         else:
-            logger.warning("No model checkpoint found at startup. API will run without loaded model.")
+            checkpoint_paths = [
+                Path("models/best.pt"),
+                Path("models/quick_deploy/fish_classifier.pt"),
+                Path("outputs/resnet_run/best.pt"),
+                Path("best.pt"),
+            ]
+
+            for ckpt_path in checkpoint_paths:
+                if ckpt_path.exists():
+                    load_model(ckpt_path)
+                    break
+            else:
+                logger.warning("No model checkpoint found at startup. API will run without loaded model.")
     except Exception as e:
         logger.error(f"Failed to load model at startup: {e}")
 
