@@ -20,12 +20,11 @@ import torch
 import torch.nn as nn
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
-from PIL import Image
-from pydantic import BaseModel, Field
 from google.cloud import storage
-from prometheus_client import Counter, Histogram, generate_latest, REGISTRY, CollectorRegistry
-from prometheus_client.core import CounterMetricFamily, GaugeMetricFamily
+from PIL import Image
+from prometheus_client import Counter, Histogram
 from prometheus_client.asgi import make_asgi_app
+from pydantic import BaseModel, Field
 
 from .data import get_official_transform
 from .extract_features import extract_image_features, features_to_csv_row, get_csv_header
@@ -262,7 +261,6 @@ def save_to_gcs(local_path: Path, bucket_name: str, object_name: str) -> None:
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup: Load model with timing metrics
-    start_time = time.time()
     try:
         # Try to download from GCS if BUCKET_NAME env var is set
         gcs_bucket = os.getenv("GCS_BUCKET", "fish_mlops")
@@ -499,7 +497,8 @@ async def monitoring_endpoint(n_latest: int = 100):
         HTML report from Evidently
     """
     from fastapi.responses import HTMLResponse
-    from .data_drift import load_current_data, load_reference_data, generate_drift_report
+
+    from .data_drift import generate_drift_report, load_current_data
 
     try:
         # Check if prediction database exists
@@ -548,10 +547,11 @@ async def monitoring_endpoint(n_latest: int = 100):
 
         # Generate report in memory
         import tempfile
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp:
             report_path = tmp.name
 
-        report = generate_drift_report(reference_data, current_data_subset, output_path=report_path)
+        generate_drift_report(reference_data, current_data_subset, output_path=report_path)
 
         # Read and return HTML
         with open(report_path) as f:

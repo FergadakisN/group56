@@ -429,7 +429,7 @@ gcloud logging read 'resource.service_name="fish-classifier-api" AND severity>=E
   - [x] Counter for error count (by type)
   - [x] Histogram for prediction latency
   - [x] Histogram for model load time
-  
+
 - [x] Exposed `/metrics` endpoint for Prometheus scraping
 
 - [x] Setup GCP Cloud Monitoring

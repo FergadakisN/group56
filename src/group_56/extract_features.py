@@ -10,7 +10,7 @@ to detect distribution shifts in image data over time.
 from __future__ import annotations
 
 import numpy as np
-from PIL import Image, ImageStat, ImageFilter
+from PIL import Image, ImageFilter, ImageStat
 
 
 def extract_image_features(image: Image.Image) -> dict[str, float]:

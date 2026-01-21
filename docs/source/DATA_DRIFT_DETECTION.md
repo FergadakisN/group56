@@ -102,10 +102,10 @@ The API automatically logs predictions using a FastAPI background task:
 @app.post("/predict")
 async def predict(background_tasks: BackgroundTasks, file: UploadFile, top_k: int = 5):
     # ... prediction logic ...
-    
+
     # Log prediction as background task (non-blocking)
     background_tasks.add_task(log_prediction_to_csv, image, predicted_class)
-    
+
     # Backup to GCS every 10 predictions
     if line_count % 10 == 0:
         background_tasks.add_task(save_to_gcs, PREDICTION_DATABASE_PATH, ...)
@@ -232,11 +232,11 @@ for i in range(20):
 # Send altered images (simulate drift)
 for i in range(20):
     image = Image.open(f"data/processed/test/image_{i}.jpg")
-    
+
     # Increase brightness by 50%
     enhancer = ImageEnhance.Brightness(image)
     bright_image = enhancer.enhance(1.5)
-    
+
     bright_image.save("/tmp/bright_image.jpg")
     os.system("curl -X POST http://localhost:8000/predict -F file=@/tmp/bright_image.jpg")
 ```
@@ -469,9 +469,9 @@ mmd_score = maximum_mean_discrepancy(reference_features, current_features)
 def check_drift(request):
     current_data = download_from_gcs("gs://fish-mlops/monitoring/prediction_database.csv")
     reference_data = download_from_gcs("gs://fish-mlops/reference_data.csv")
-    
+
     report = generate_drift_report(reference_data, current_data)
-    
+
     if drift_detected(report):
         send_email_alert()
         trigger_retraining_pipeline()

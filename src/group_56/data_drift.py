@@ -9,12 +9,13 @@ detection methods.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 from evidently.metric_preset import DataDriftPreset, DataQualityPreset, TargetDriftPreset
 from evidently.report import Report
 from evidently.test_preset import DataDriftTestPreset, DataQualityTestPreset
 from evidently.test_suite import TestSuite
-from pathlib import Path
 
 
 def load_reference_data(data_dir: str = "data/processed") -> pd.DataFrame:
@@ -189,7 +190,7 @@ def main():
 
     # Generate report
     print("\nGenerating drift report...")
-    report = generate_drift_report(reference_data, current_data)
+    generate_drift_report(reference_data, current_data)
     print("Report saved to: data_drift_report.html")
 
     # Run tests
