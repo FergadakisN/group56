@@ -1,0 +1,82 @@
+_wandb:
+    value:
+        cli_version: 0.24.0
+        e:
+            hlgc7hizhc8etxayd2eq1xwl3mlhoihi:
+                apple:
+                    ecpuCores: 4
+                    gpuCores: 8
+                    memoryGb: 8
+                    name: Apple M1
+                    pcpuCores: 4
+                    ramTotalBytes: "8589934592"
+                    swapTotalBytes: "6442450944"
+                args:
+                    - --epochs
+                    - "10"
+                    - --batch-size
+                    - "32"
+                cpu_count: 8
+                cpu_count_logical: 8
+                disk:
+                    /:
+                        total: "245107195904"
+                        used: "183890751488"
+                email: nikosfergadakis@gmail.com
+                executable: /opt/miniconda3/envs/fish_mlops/bin/python
+                git:
+                    commit: 310a129573e1b7b88fe01ac58cd7c4607fadc080
+                    remote: https://github.com/FergadakisN/group56.git
+                host: macbookpro
+                memory:
+                    total: "8589934592"
+                os: macOS-26.2-arm64-arm-64bit
+                program: -m group_56.train
+                python: CPython 3.10.19
+                root: /Users/nikolaosfergadakis/Desktop/DTU/january_course/ml_ops_project/GROUP_56/src/group_56
+                startedAt: "2026-01-21T15:56:45.606029Z"
+                writerId: hlgc7hizhc8etxayd2eq1xwl3mlhoihi
+        m: []
+        python_version: 3.10.19
+        t:
+            "1":
+                - 1
+                - 41
+                - 105
+            "2":
+                - 1
+                - 41
+                - 105
+            "3":
+                - 13
+                - 16
+            "4": 3.10.19
+            "5": 0.24.0
+            "12": 0.24.0
+            "13": darwin-arm64
+amp:
+    value: true
+arch:
+    value: resnet18
+batch_size:
+    value: 32
+ckpt_name:
+    value: last.pt
+epochs:
+    value: 10
+freeze_backbone:
+    value: false
+lr:
+    value: 0.0003
+pretrained:
+    value: true
+processed_dir:
+    value: data/processed
+save_best:
+    value: true
+seed:
+    value: 42
+unfreeze_from:
+    value: null
+weight_decay:
+    value: 0.0001
