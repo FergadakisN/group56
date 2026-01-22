@@ -30,9 +30,6 @@ jobs:
     name: Deploy to Cloud Run
     runs-on: ubuntu-latest
 
-    # Only run if either WIF secrets or a JSON key secret is available
-    if: ${{ (secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '') || (secrets.GCP_SA_KEY != '') }}
-
     permissions:
       contents: read
       id-token: write
@@ -41,9 +38,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Determine auth mode
+        id: auth-mode
+        run: |
+          has_wif="false"
+          if [ -n "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ] && [ -n "${{ secrets.GCP_SERVICE_ACCOUNT }}" ]; then
+            has_wif="true"
+          fi
+
+          has_key="false"
+          if [ -n "${{ secrets.GCP_SA_KEY }}" ]; then
+            has_key="true"
+          fi
+
+          if [ "$has_wif" = "false" ] && [ "$has_key" = "false" ]; then
+            echo "No auth secrets configured. Set either WIF (GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT) or GCP_SA_KEY."
+            exit 1
+          fi
+
+          echo "has_wif=$has_wif" >> $GITHUB_OUTPUT
+          echo "has_key=$has_key" >> $GITHUB_OUTPUT
+
       # Prefer Workload Identity Federation when configured
       - name: Authenticate to Google Cloud (WIF)
-        if: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '' }}
+        if: ${{ steps.auth-mode.outputs.has_wif == 'true' }}
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -51,7 +69,7 @@ jobs:
 
       # Fallback to service account JSON key when provided
       - name: Authenticate to Google Cloud (Key)
-        if: ${{ secrets.GCP_SA_KEY != '' }}
+        if: ${{ steps.auth-mode.outputs.has_key == 'true' }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
