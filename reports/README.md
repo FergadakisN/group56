@@ -242,8 +242,8 @@ In test_api.py we validate the FastAPI endpoints, covering health checks, model 
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our \*\*
-> *code and even if we were then...\*
+> _The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our \*_
+> _code and even if we were then...\*_
 >
 > Answer:
 
