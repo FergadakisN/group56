@@ -151,7 +151,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
---- question 3 fill here ---
+--- No, we only used frameworks/packages mentioned in the course.---
 
 ## Coding environment
 
@@ -194,7 +194,7 @@ Following these steps ensures that the development environment is fully reproduc
 >
 > Answer:
 
---- The overall structure is initialized with the provided cookiecutter template. We filled out almost every folder in our project. We have added some files in the /src/group_56 folder.... ---
+--- The overall structure is initialized with the cookiecutter template. We tried to follow the cookiecutter structure as much as possible. The core code lives in src/group_56 (data loading/preprocessing in data.py, model definition in model.py, evaluation in evaluate.py, and the FastAPI app in api.py). Data is organized under data/ with raw/ and processed/ and tracked via DVC(data.dvc). Experiment configs live in configs/ (train+sweep configs), tests are in tests/ (unit,API, and load tests), and documentation in docs/ (mkdocs). We kept reports/ for the exam report and figures, and added infrastructure files such as dockerfiles/ for train/eval/api images,scripts/ for GCP monitoring setup, cloudbuild.yaml, config.yaml, and run outputs in outputs//wandb. We didn't do major deviations or removals from the template.We mainly extended it with extra configs and deployment/monitoring assets. ---
 
 ### Question 6
 
@@ -313,7 +313,14 @@ In test_api.py we validate the FastAPI endpoints, covering health checks, model 
 >
 > Answer:
 
---- question 12 fill here ---
+--- We configured experiments using JSON configuration files and W&B sweeps to ensure reproducibility and systematic exploration.
+
+Training parameters can be overridden via a JSON file passed with the --config-path argparse argument, which defines settings such as the number of epochs, batch size, learning rate, weight decay. An example run looks like:
+python -m group_56.train --config-path configs/train_example.json
+For hyperparameter optimization, we define a sweep configuration in configs/sweep.yaml. The sweep is launched with:
+wandb sweep configs/sweep.yaml
+wandb agent sweep-id
+This setup ensures that all experiments are fully reproducible and automatically logged to Weights & Biases, with the exact configuration of each run stored and available for easy comparison and analysis at a later stage. ---
 
 ### Question 13
 
@@ -328,7 +335,8 @@ In test_api.py we validate the FastAPI endpoints, covering health checks, model 
 >
 > Answer:
 
---- question 13 fill here ---
+--- We ensure full reproducibility throughout the project by combining fixed random seeds, version-controlled configuration files, and systematic experiment tracking. All training runs explicitly set random seeds for Python, NumPy, and PyTorch, ensuring deterministic behavior whenever possible. Hyperparameters and training options are stored in JSON configuration files and sweep definitions, which are tracked in version control and passed directly to the training script.
+In addition, every experiment is logged to Weights & Biases, where the complete configuration, training and validation metrics, and relevant artifacts such as model checkpoints are automatically recorded. Checkpoints and detailed training logs are also saved locally on a per-run basis. This setup makes each experiment fully traceable and reproducible: any run can be rerun exactly by reusing the same configuration file and seed, or by restoring the precise run configuration directly from W&B for further analysis or comparison. ---
 
 ### Question 14
 
@@ -345,7 +353,20 @@ In test_api.py we validate the FastAPI endpoints, covering health checks, model 
 >
 > Answer:
 
---- question 14 fill here ---
+---
+
+[this figure](figures/question_14_1.png)
+[this figure](figures/question_14_2.png)
+[this figure](figures/question_14_3.png)
+[this figure](figures/question_14_4.png)
+
+The screenshots show several experiments tracked using Weights & Biases (W&B), where we monitored the evolution of training loss, training accuracy, validation loss, and validation accuracy over multiple epochs. These metrics are fundamental for understanding both how well the model fits the training data and how effectively it generalizes to unseen samples.
+
+The training loss curves consistently decrease across all runs, indicating that the optimization process is working as expected and that the model is learning meaningful representations from the data. This is reflected in the training accuracy, which increases steadily and, in some runs, reaches relatively high values. Together, these metrics confirm that the model can successfully learn the training distribution.
+
+To evaluate generalization performance, we also track validation loss and validation accuracy. These metrics are particularly important, as they provide an estimate of how the model would perform on new, unseen data. While validation loss decreases over time and validation accuracy improves, both metrics consistently lag behind their training counterparts. The visible gap between training and validation curves suggests the presence of overfitting, where the model fits the training data more closely than the validation data.
+
+By logging multiple runs on the same plots, W&B allows direct comparison between different hyperparameter configurations, such as learning rate, batch size, or regularization strength. This makes it easier to identify training setups that lead to more stable convergence and better validation performance. Overall, tracking these four metrics provides a clear and interpretable overview of the learning dynamics and is essential for diagnosing overfitting and guiding further model improvements. ---
 
 ### Question 15
 
@@ -387,7 +408,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 16 fill here ---
+--- We debugged experiments by combining fast feedback loops and structured logging. For most issues we reduced the run size (few epochs, small batch size, CPU) and reproduced errors locally, then used log statements and the training logs to trace where things broke. Unit tests for data and model components helped isolate bugs early, and API/load tests were used to catch deployment issues. When needed, we also relied on IDE breakpoints or simple print‑based checks of tensor shapes, dataloader outputs, and config values. W&B runs made it easy to spot abnormal metrics or NaNs. We did not run formal profiling tools (e.g., cProfile, torch profiler); the project isn’t “perfect,” and profiling would be the next step if we needed to optimize training time or data loading. ---
 
 ## Working in the cloud
 
@@ -419,7 +440,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 18 fill here ---
+--- We used GCP Compute Engine indirectly via Vertex AI custom training jobs. Our training container (built from our train.dockerfile and stored in Artifact Registry) ran on Vertex AI-managed VMs, and the job pulled data from our GCS/DVC remote and logged metrics to W&B. ---
 
 ### Question 19
 
@@ -437,7 +458,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 20 fill here ---
+--- [this figure](figures/question_20.png) ---
 
 ### Question 21
 
