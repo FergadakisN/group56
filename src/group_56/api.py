@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
-from google.cloud import storage # type: ignore[import-untyped]
+from google.cloud import storage  # type: ignore[import-untyped]
 from PIL import Image
 from prometheus_client import Counter, Histogram
 from prometheus_client.asgi import make_asgi_app
@@ -411,7 +411,7 @@ async def predict(
         top_k_probs, top_k_indices = torch.topk(probabilities, min(top_k, len(IDX_TO_CLASS)))
 
         top_k_predictions = [
-            TopKPrediction("class_name"=IDX_TO_CLASS[idx.item()], "confidence"=prob.item())
+            TopKPrediction(class_name=IDX_TO_CLASS[idx.item()], confidence=prob.item())
             for prob, idx in zip(top_k_probs, top_k_indices, strict=True)
         ]
 
