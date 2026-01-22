@@ -124,7 +124,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
-group 56
+--- group 56 ---
 
 ### Question 2
 
@@ -136,7 +136,7 @@ group 56
 >
 > Answer:
 
-s252976, s253129, s243131, s253154
+--- s252976, s253129, s243131, s253154 ---
 
 ### Question 3
 
@@ -171,14 +171,14 @@ s252976, s253129, s243131, s253154
 >
 > Answer:
 
-We managed dependencies using conda environments to ensure isolation and reproducibility across different machines. All required Python packages and their exact versions are listed in the requirements.txt file, allowing every team member to work with the same software setup and avoid dependency conflicts.
+--- We managed dependencies using conda environments to ensure isolation and reproducibility across different machines. All required Python packages and their exact versions are listed in the requirements.txt file, allowing every team member to work with the same software setup and avoid dependency conflicts.
 To obtain an exact copy of the project environment, a new team member must first clone the repository and move into the project directory. Then, a new conda environment is created to keep dependencies isolated from other projects. Once the environment is active, all necessary libraries are installed directly from the requirements.txt file using pip. The full process is shown below:
 git clone [https://github.com/FergadakisN/group56.git](https://github.com/FergadakisN/group56.git)
 cd group56
 conda create -n myenv
 conda activate myenv
 pip install -r requirements.txt
-Following these steps ensures that the development environment is fully reproducible and consistent across all team members and systems.
+Following these steps ensures that the development environment is fully reproducible and consistent across all team members and systems. ---
 
 ### Question 5
 
@@ -194,7 +194,7 @@ Following these steps ensures that the development environment is fully reproduc
 >
 > Answer:
 
-The overall structure is initialized with the provided cookiecutter template. We filled out almost every folder in our project. We have added some files in the /src/group_56 folder....
+--- The overall structure is initialized with the provided cookiecutter template. We filled out almost every folder in our project. We have added some files in the /src/group_56 folder.... ---
 
 ### Question 6
 
@@ -209,8 +209,8 @@ The overall structure is initialized with the provided cookiecutter template. We
 >
 > Answer:
 
-In this project we followed code quality and formatting rules (PEP 8 style, consistent naming, docstrings, type hints, and organized imports) to keep the code readable. Ruff was used for both linting and formatting, while we used mypy to check typing. For documentation, we use module and function docstrings plus the project README/report to describe purpose and usage. Finally, we implemented automated ruff checks and ruff fixes using pre-commit configuration.
-These concepts matter in larger projects because consistent style reduces cognitive load, catches bugs early, and makes code reviews faster. Typing is especially helpful when the team grows, because it clarifies inputs/outputs and prevents misuse across modules. Documentation preserves context, so new contributors can onboard quickly and changes are safer over time. Together, linting, formatting, typing, and docs create a shared standard that keeps the project maintainable and reliable.
+--- In this project we followed code quality and formatting rules (PEP 8 style, consistent naming, docstrings, type hints, and organized imports) to keep the code readable. Ruff was used for both linting and formatting, while we used mypy to check typing. For documentation, we use module and function docstrings plus the project README/report to describe purpose and usage. Finally, we implemented automated ruff checks and ruff fixes using pre-commit configuration.
+These concepts matter in larger projects because consistent style reduces cognitive load, catches bugs early, and makes code reviews faster. Typing is especially helpful when the team grows, because it clarifies inputs/outputs and prevents misuse across modules. Documentation preserves context, so new contributors can onboard quickly and changes are safer over time. Together, linting, formatting, typing, and docs create a shared standard that keeps the project maintainable and reliable. ---
 
 ## Version control
 
@@ -240,7 +240,7 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Example:
 > *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our \*\*
-> *code and even if we were then...\*
+>*code and even if we were then...\*
 >
 > Answer:
 
@@ -250,15 +250,31 @@ These concepts matter in larger projects because consistent style reduces cognit
 
 > **Did you workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and**
 > **pull request can help improve version control.**
+>
+> Recommended answer length: 100-200 words.
+>
+> Example:
+> _We made use of both branches and PRs in our project. In our group, each member had an branch that they worked on in_
+> _addition to the main branch. To merge code we ..._
+>
 > Answer:
-> --- We made use of both brances and PRs in our project. In our group, each member had a branch that they worked on, in addition to the main branch. More specifically, we used a new branch for almost each new task we made. This let us review the code before we merged it,while keeping the main branch stable. PRs also provided a clear history of what changed and why, helping us avoiding conflicts. To merge code we opened a pull request from the feature branch into main, requested a quick review from a teammate, resolved any comments or conflicts, and only merged after CI/tests passed to keep the main branch stable ---
+
+--- We made use of both brances and PRs in our project. In our group, each member had a branch that they worked on, in addition to the main branch. More specifically, we used a new branch for almost each new task we made. This let us review the code before we merged it,while keeping the main branch stable. PRs also provided a clear history of what changed and why, helping us avoiding conflicts. To merge code we opened a pull request from the feature branch into main, requested a quick review from a teammate, resolved any comments or conflicts, and only merged after CI/tests passed to keep the main branch stable ---
 
 ### Question 10
 
 > **Did you use DVC for managing data in your project? If yes, then how did it improve your project to have version**
 > **control of your data. If no, explain a case where it would be beneficial to have version control of your data.**
+>
+> Recommended answer length: 100-200 words.
+>
+> Example:
+> _We did make use of DVC in the following way: ... . In the end it helped us in ... for controlling ... part of our_
+> _pipeline_
+>
 > Answer:
-> --- We used DVC to version control the fish image dataset and related metadata files(e.g. the cropped images). Instead of commiting large files to Git, we tracked them with .dvc files and stored the actual data in a shared remote Google Drive. This made the repository lightweight, while still keeping exact dataset versions tied to specific commits. Also, it improved reproducibility, since anyone could pull the same dataset version that was used for training or evaluation. Moreover, it helped the team collaborate without manually sharing large files. Overall, DVC gave us a reliable way to manage and share data artifacts alongsie code, which kept the pipeline consistent and easier to debug. ---
+
+--- We used DVC to version control the fish image dataset and related metadata files(e.g. the cropped images). Instead of commiting large files to Git, we tracked them with .dvc files and stored the actual data in a shared remote Google Drive. This made the repository lightweight, while still keeping exact dataset versions tied to specific commits. Also, it improved reproducibility, since anyone could pull the same dataset version that was used for training or evaluation. Moreover, it helped the team collaborate without manually sharing large files. Overall, DVC gave us a reliable way to manage and share data artifacts alongsie code, which kept the pipeline consistent and easier to debug. ---
 
 ### Question 11
 
@@ -350,8 +366,8 @@ docker build -t fish-api -f dockerfiles/api.dockerfile .
 docker run --rm -p 8000:8080 fish-api
 
 This setup let us share consistent environments across the team and made it straightforward to run locally, in CI, or on Cloud Run. Link to dockerfile:
-[weblink](https://github.com/FergadakisN/group56/blob/main/dockerfiles/train.dockerfile)_
-[weblink](https://github.com/FergadakisN/group56/blob/main/dockerfiles/api.dockerfile)_
+[train.dockerfile](https://github.com/FergadakisN/group56/blob/main/dockerfiles/train.dockerfile)_
+[api.dockerfile](https://github.com/FergadakisN/group56/blob/main/dockerfiles/api.dockerfile)_
 
 ---
 
@@ -377,8 +393,15 @@ This setup let us share consistent environments across the team and made it stra
 ### Question 17
 
 > **List all the GCP services that you made use of in your project and shortly explain what each service does?**
+>
+> Recommended answer length: 50-200 words.
+>
+> Example:
+> _We used the following two services: Engine and Bucket. Engine is used for... and Bucket is used for..._
+>
 > Answer:
-> --- We used several GCP services to cover the full MLOps workflow. Cloud Storage (GCS) served as the shared data and artifact store, allowing DVC to version the dataset and save model checkpoints. Vertex AI handled cloud training jobs so we could run experiments on managed compute (including GPUs when needed). Cloud Run hosted our FastAPI inference service as a serverless container with automatic scaling. Cloud Build automated container builds and deployments whenever the code changed. Artifact Registry stored Docker images built by Cloud Build. Finally, Cloud Monitoring and Cloud Logging provided operational visibility by capturing API metrics and logs and enabling alerting. Together, these services let us train, deploy, and monitor the model in a reproducible and scalable way. ---
+
+--- We used several GCP services to cover the full MLOps workflow. Cloud Storage (GCS) served as the shared data and artifact store, allowing DVC to version the dataset and save model checkpoints. Vertex AI handled cloud training jobs so we could run experiments on managed compute (including GPUs when needed). Cloud Run hosted our FastAPI inference service as a serverless container with automatic scaling. Cloud Build automated container builds and deployments whenever the code changed. Artifact Registry stored Docker images built by Cloud Build. Finally, Cloud Monitoring and Cloud Logging provided operational visibility by capturing API metrics and logs and enabling alerting. Together, these services let us train, deploy, and monitor the model in a reproducible and scalable way. ---
 
 ### Question 18
 
@@ -402,7 +425,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- [this figure](figures/quest_19.png) ---
+--- [GCP bucket](figures/quest_19.png) ---
 
 ### Question 20
 
@@ -420,7 +443,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- [this figure](figures/question_21_build_images.png) ---
+--- [GCP cloud build history](figures/question_21_build_images.png) ---
 
 ### Question 22
 
