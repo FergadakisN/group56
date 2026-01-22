@@ -3,7 +3,7 @@
 This is the report template for the exam. Please only remove the text formatted as with three dashes in front and behind
 like:
 
-```--- question 1 fill here ---```
+`--- question 1 fill here ---`
 
 Where you instead should add your answers. Any other changes may have unwanted consequences when your report is
 auto-generated at the end of the course. For questions where you are asked to include images, start by adding the image
@@ -45,7 +45,7 @@ uv add typer markdown
 
 ## Overall project checklist
 
-The checklist is *exhaustive* which means that it includes everything that you could do on the project included in the
+The checklist is _exhaustive_ which means that it includes everything that you could do on the project included in the
 curriculum in this course. Therefore, we do not expect at all that you have checked all boxes at the end of the project.
 The parenthesis at the end indicates what module the bullet point is related to. Please be honest in your answers, we
 will check the repositories and the code to verify your answers.
@@ -132,7 +132,7 @@ group 56
 >
 > Example:
 >
-> *sXXXXXX, sXXXXXX, sXXXXXX*
+> _sXXXXXX, sXXXXXX, sXXXXXX_
 >
 > Answer:
 
@@ -146,8 +146,8 @@ s252976, s253129, s243131, s253154
 > Recommended answer length: 0-200 words.
 >
 > Example:
-> *We used the third-party framework ... in our project. We used functionality ... and functionality ... from the*
-> *package to do ... and ... in our project*.
+> _We used the third-party framework ... in our project. We used functionality ... and functionality ... from the_
+> _package to do ... and ... in our project_.
 >
 > Answer:
 
@@ -166,8 +166,8 @@ s252976, s253129, s243131, s253154
 > Recommended answer length: 100-200 words
 >
 > Example:
-> *We used ... for managing our dependencies. The list of dependencies was auto-generated using ... . To get a*
-> *complete copy of our development environment, one would have to run the following commands*
+> _We used ... for managing our dependencies. The list of dependencies was auto-generated using ... . To get a_
+> _complete copy of our development environment, one would have to run the following commands_
 >
 > Answer:
 
@@ -188,9 +188,9 @@ Following these steps ensures that the development environment is fully reproduc
 > Recommended answer length: 100-200 words
 >
 > Example:
-> *From the cookiecutter template we have filled out the ... , ... and ... folder. We have removed the ... folder*
-> *because we did not use any ... in our project. We have added an ... folder that contains ... for running our*
-> *experiments.*
+> _From the cookiecutter template we have filled out the ... , ... and ... folder. We have removed the ... folder_
+> _because we did not use any ... in our project. We have added an ... folder that contains ... for running our_
+> _experiments._
 >
 > Answer:
 
@@ -204,8 +204,8 @@ The overall structure is initialized with the provided cookiecutter template. We
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *We used ... for linting and ... for formatting. We also used ... for typing and ... for documentation. These*
-> *concepts are important in larger projects because ... . For example, typing ...*
+> _We used ... for linting and ... for formatting. We also used ... for typing and ... for documentation. These_
+> _concepts are important in larger projects because ... . For example, typing ..._
 >
 > Answer:
 
@@ -224,8 +224,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 50-100 words.
 >
 > Example:
-> *In total we have implemented X tests. Primarily we are testing ... and ... as these the most critical parts of our*
-> *application but also ... .*
+> _In total we have implemented X tests. Primarily we are testing ... and ... as these the most critical parts of our_
+> _application but also ... ._
 >
 > Answer:
 
@@ -239,8 +239,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our **
-> *code and even if we were then...*
+> *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our \*\*
+> *code and even if we were then...\*
 >
 > Answer:
 
@@ -250,44 +250,28 @@ These concepts matter in larger projects because consistent style reduces cognit
 
 > **Did you workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and**
 > **pull request can help improve version control.**
->
-> Recommended answer length: 100-200 words.
->
-> Example:
-> *We made use of both branches and PRs in our project. In our group, each member had an branch that they worked on in*
-> *addition to the main branch. To merge code we ...*
->
 > Answer:
-
---- question 9 fill here ---
+> --- We made use of both brances and PRs in our project. In our group, each member had a branch that they worked on, in addition to the main branch. More specifically, we used a new branch for almost each new task we made. This let us review the code before we merged it,while keeping the main branch stable. PRs also provided a clear history of what changed and why, helping us avoiding conflicts. To merge code we opened a pull request from the feature branch into main, requested a quick review from a teammate, resolved any comments or conflicts, and only merged after CI/tests passed to keep the main branch stable ---
 
 ### Question 10
 
 > **Did you use DVC for managing data in your project? If yes, then how did it improve your project to have version**
 > **control of your data. If no, explain a case where it would be beneficial to have version control of your data.**
->
-> Recommended answer length: 100-200 words.
->
-> Example:
-> *We did make use of DVC in the following way: ... . In the end it helped us in ... for controlling ... part of our*
-> *pipeline*
->
 > Answer:
-
---- question 10 fill here ---
+> --- We used DVC to version control the fish image dataset and related metadata files(e.g. the cropped images). Instead of commiting large files to Git, we tracked them with .dvc files and stored the actual data in a shared remote Google Drive. This made the repository lightweight, while still keeping exact dataset versions tied to specific commits. Also, it improved reproducibility, since anyone could pull the same dataset version that was used for training or evaluation. Moreover, it helped the team collaborate without manually sharing large files. Overall, DVC gave us a reliable way to manage and share data artifacts alongsie code, which kept the pipeline consistent and easier to debug. ---
 
 ### Question 11
 
 > **Discuss you continuous integration setup. What kind of continuous integration are you running (unittesting,**
-> **linting, etc.)? Do you test multiple operating systems, Python  version etc. Do you make use of caching? Feel free**
+> **linting, etc.)? Do you test multiple operating systems, Python version etc. Do you make use of caching? Feel free**
 > **to insert a link to one of your GitHub actions workflow.**
 >
 > Recommended answer length: 200-300 words.
 >
 > Example:
-> *We have organized our continuous integration into 3 separate files: one for doing ..., one for running ... testing*
-> *and one for running ... . In particular for our ..., we used ... .An example of a triggered workflow can be seen*
-> *here: [weblink](weblink)*
+> _We have organized our continuous integration into 3 separate files: one for doing ..., one for running ... testing_
+> _and one for running ... . In particular for our ..., we used ... .An example of a triggered workflow can be seen_
+> _here: [weblink](weblink)_
 >
 > Answer:
 
@@ -306,7 +290,7 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 50-100 words.
 >
 > Example:
-> *We used a simple argparser, that worked in the following way: Python  my_script.py --lr 1e-3 --batch_size 25*
+> _We used a simple argparser, that worked in the following way: Python my_script.py --lr 1e-3 --batch_size 25_
 >
 > Answer:
 
@@ -320,8 +304,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *We made use of config files. Whenever an experiment is run the following happens: ... . To reproduce an experiment*
-> *one would have to do ...*
+> _We made use of config files. Whenever an experiment is run the following happens: ... . To reproduce an experiment_
+> _one would have to do ..._
 >
 > Answer:
 
@@ -337,8 +321,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 200-300 words + 1 to 3 screenshots.
 >
 > Example:
-> *As seen in the first image when have tracked ... and ... which both inform us about ... in our experiments.*
-> *As seen in the second image we are also tracking ... and ...*
+> _As seen in the first image when have tracked ... and ... which both inform us about ... in our experiments._
+> _As seen in the second image we are also tracking ... and ..._
 >
 > Answer:
 
@@ -352,12 +336,24 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *For our project we developed several images: one for training, inference and deployment. For example to run the*
-> *training docker image: `docker run trainer:latest lr=1e-3 batch_size=64`. Link to docker file: [weblink](weblink)*
+> _For our project we developed several images: one for training, inference and deployment. For example to run the_
+> _training docker image: `docker run trainer:latest lr=1e-3 batch_size=64`. Link to docker file: [weblink](weblink)_
 >
 > Answer:
 
---- question 15 fill here ---
+--- For our project we used Docker to containerize both training and inference so experiments are reproducible and deployable. we built a training image from train.dockerfile and an API image from api.dockerfile. The training container runs the module entrypoint and expects the dataset to be available via DVC or a mounted volume.
+commands:
+docker build -t fish-train -f dockerfiles/train.dockerfile .
+docker run --rm -v "$(pwd)/data:/app/data" fish-train --epochs 10 --batch-size 32
+For inference, we run the FastAPI server:
+docker build -t fish-api -f dockerfiles/api.dockerfile .
+docker run --rm -p 8000:8080 fish-api
+
+This setup let us share consistent environments across the team and made it straightforward to run locally, in CI, or on Cloud Run. Link to dockerfile:
+[weblink](https://github.com/FergadakisN/group56/blob/main/dockerfiles/train.dockerfile)_
+[weblink](https://github.com/FergadakisN/group56/blob/main/dockerfiles/api.dockerfile)_
+
+---
 
 ### Question 16
 
@@ -367,8 +363,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *Debugging method was dependent on group member. Some just used ... and others used ... . We did a single profiling*
-> *run of our main code at some point that showed ...*
+> _Debugging method was dependent on group member. Some just used ... and others used ... . We did a single profiling_
+> _run of our main code at some point that showed ..._
 >
 > Answer:
 
@@ -381,15 +377,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 ### Question 17
 
 > **List all the GCP services that you made use of in your project and shortly explain what each service does?**
->
-> Recommended answer length: 50-200 words.
->
-> Example:
-> *We used the following two services: Engine and Bucket. Engine is used for... and Bucket is used for...*
->
 > Answer:
-
---- question 17 fill here ---
+> --- We used several GCP services to cover the full MLOps workflow. Cloud Storage (GCS) served as the shared data and artifact store, allowing DVC to version the dataset and save model checkpoints. Vertex AI handled cloud training jobs so we could run experiments on managed compute (including GPUs when needed). Cloud Run hosted our FastAPI inference service as a serverless container with automatic scaling. Cloud Build automated container builds and deployments whenever the code changed. Artifact Registry stored Docker images built by Cloud Build. Finally, Cloud Monitoring and Cloud Logging provided operational visibility by capturing API metrics and logs and enabling alerting. Together, these services let us train, deploy, and monitor the model in a reproducible and scalable way. ---
 
 ### Question 18
 
@@ -399,8 +388,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *We used the compute engine to run our ... . We used instances with the following hardware: ... and we started the*
-> *using a custom container: ...*
+> _We used the compute engine to run our ... . We used instances with the following hardware: ... and we started the_
+> _using a custom container: ..._
 >
 > Answer:
 
@@ -413,7 +402,7 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 19 fill here ---
+--- [this figure](figures/quest_19.png) ---
 
 ### Question 20
 
@@ -431,7 +420,7 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 21 fill here ---
+--- [this figure](figures/question_21_build_images.png) ---
 
 ### Question 22
 
@@ -441,12 +430,12 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *We managed to train our model in the cloud using the Engine. We did this by ... . The reason we choose the Engine*
-> *was because ...*
+> _We managed to train our model in the cloud using the Engine. We did this by ... . The reason we choose the Engine_
+> _was because ..._
 >
 > Answer:
 
---- question 22 fill here ---
+--- We managed to train the model in the cloud using Vertex AI. We containerized the training code with our training Dockerfile, pushed the image to Artifact Registry, and submitted a Vertex AI custom training job pointing to that image. The job pulled the dataset from our GCS/DVC remote at runtime, ran the group_56.train module inside the container, and logged metrics to Weights & Biases for experiment tracking. We chose Vertex AI because it provides managed training infrastructure, easy access to GPU/CPU resources, and integrates well with other GCP services we already used (GCS, Artifact Registry, Cloud Build). This setup kept the training environment reproducible and allowed us to scale runs beyond our local machines. ---
 
 ## Deployment
 
@@ -458,8 +447,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *We did manage to write an API for our model. We used FastAPI to do this. We did this by ... . We also added ...*
-> *to the API to make it more ...*
+> _We did manage to write an API for our model. We used FastAPI to do this. We did this by ... . We also added ..._
+> _to the API to make it more ..._
 >
 > Answer:
 
@@ -473,9 +462,9 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *For deployment we wrapped our model into application using ... . We first tried locally serving the model, which*
-> *worked. Afterwards we deployed it in the cloud, using ... . To invoke the service an user would call*
-> *`curl -X POST -F "file=@file.json"<weburl>`*
+> _For deployment we wrapped our model into application using ... . We first tried locally serving the model, which_
+> _worked. Afterwards we deployed it in the cloud, using ... . To invoke the service an user would call_
+> _`curl -X POST -F "file=@file.json"<weburl>`_
 >
 > Answer:
 
@@ -489,8 +478,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *For unit testing we used ... and for load testing we used ... . The results of the load testing showed that ...*
-> *before the service crashed.*
+> _For unit testing we used ... and for load testing we used ... . The results of the load testing showed that ..._
+> _before the service crashed._
 >
 > Answer:
 
@@ -504,8 +493,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *We did not manage to implement monitoring. We would like to have monitoring implemented such that over time we could*
-> *measure ... and ... that would inform us about this ... behaviour of our application.*
+> _We did not manage to implement monitoring. We would like to have monitoring implemented such that over time we could_
+> _measure ... and ... that would inform us about this ... behaviour of our application._
 >
 > Answer:
 
@@ -523,8 +512,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *Group member 1 used ..., Group member 2 used ..., in total ... credits was spend during development. The service*
-> *costing the most was ... due to ... . Working in the cloud was ...*
+> _Group member 1 used ..., Group member 2 used ..., in total ... credits was spend during development. The service_
+> _costing the most was ... due to ... . Working in the cloud was ..._
 >
 > Answer:
 
@@ -539,8 +528,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 0-200 words.
 >
 > Example:
-> *We implemented a frontend for our API. We did this because we wanted to show the user ... . The frontend was*
-> *implemented using ...*
+> _We implemented a frontend for our API. We did this because we wanted to show the user ... . The frontend was_
+> _implemented using ..._
 >
 > Answer:
 
@@ -556,8 +545,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Example:
 >
-> *The starting point of the diagram is our local setup, where we integrated ... and ... and ... into our code.*
-> *Whenever we commit code and push to GitHub, it auto triggers ... and ... . From there the diagram shows ...*
+> _The starting point of the diagram is our local setup, where we integrated ... and ... and ... into our code._
+> _Whenever we commit code and push to GitHub, it auto triggers ... and ... . From there the diagram shows ..._
 >
 > Answer:
 
@@ -571,7 +560,7 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 200-400 words.
 >
 > Example:
-> *The biggest challenges in the project was using ... tool to do ... . The reason for this was ...*
+> _The biggest challenges in the project was using ... tool to do ... . The reason for this was ..._
 >
 > Answer:
 
@@ -586,11 +575,11 @@ These concepts matter in larger projects because consistent style reduces cognit
 > Recommended answer length: 50-300 words.
 >
 > Example:
-> *Student sXXXXXX was in charge of developing of setting up the initial cookie cutter project and developing of the*
-> *docker containers for training our applications.*
-> *Student sXXXXXX was in charge of training our models in the cloud and deploying them afterwards.*
-> *All members contributed to code by...*
-> *We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.*
+> _Student sXXXXXX was in charge of developing of setting up the initial cookie cutter project and developing of the_
+> _docker containers for training our applications._
+> _Student sXXXXXX was in charge of training our models in the cloud and deploying them afterwards._
+> _All members contributed to code by..._
+> _We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code._
 > Answer:
 
 --- question 31 fill here ---

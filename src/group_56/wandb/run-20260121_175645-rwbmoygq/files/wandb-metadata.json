@@ -1,0 +1,41 @@
+{
+  "os": "macOS-26.2-arm64-arm-64bit",
+  "python": "CPython 3.10.19",
+  "startedAt": "2026-01-21T15:56:45.606029Z",
+  "args": [
+    "--epochs",
+    "10",
+    "--batch-size",
+    "32"
+  ],
+  "program": "-m group_56.train",
+  "git": {
+    "remote": "https://github.com/FergadakisN/group56.git",
+    "commit": "310a129573e1b7b88fe01ac58cd7c4607fadc080"
+  },
+  "email": "nikosfergadakis@gmail.com",
+  "root": "/Users/nikolaosfergadakis/Desktop/DTU/january_course/ml_ops_project/GROUP_56/src/group_56",
+  "host": "macbookpro",
+  "executable": "/opt/miniconda3/envs/fish_mlops/bin/python",
+  "cpu_count": 8,
+  "cpu_count_logical": 8,
+  "disk": {
+    "/": {
+      "total": "245107195904",
+      "used": "183890751488"
+    }
+  },
+  "memory": {
+    "total": "8589934592"
+  },
+  "apple": {
+    "name": "Apple M1",
+    "ecpuCores": 4,
+    "pcpuCores": 4,
+    "gpuCores": 8,
+    "memoryGb": 8,
+    "swapTotalBytes": "6442450944",
+    "ramTotalBytes": "8589934592"
+  },
+  "writerId": "hlgc7hizhc8etxayd2eq1xwl3mlhoihi"
+}
