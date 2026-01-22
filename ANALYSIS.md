@@ -1,6 +1,6 @@
 # In-Depth Change Analysis
 
-This revision enumerates the files edited and created in the.
+This revision covers the files edited and created in the.
 
 ## Runtime and Core Logic
 
