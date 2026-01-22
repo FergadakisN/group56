@@ -12,10 +12,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-from evidently.metric_preset import DataDriftPreset, DataQualityPreset, TargetDriftPreset
-from evidently.report import Report
-from evidently.test_preset import DataDriftTestPreset, DataQualityTestPreset
-from evidently.test_suite import TestSuite
+from evidently.metric_preset import (  # type: ignore[import-untyped]
+    DataDriftPreset,
+    DataQualityPreset,
+    TargetDriftPreset,
+)
+from evidently.report import Report  # type: ignore[import-untyped]
+from evidently.test_preset import DataDriftTestPreset, DataQualityTestPreset  # type: ignore[import-untyped]
+from evidently.test_suite import TestSuite  # type: ignore[import-untyped]
 
 
 def load_reference_data(data_dir: str = "data/processed") -> pd.DataFrame:
