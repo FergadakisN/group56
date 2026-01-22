@@ -40,6 +40,8 @@ jobs:
 
       - name: Determine auth mode
         id: auth-mode
+        env:
+          SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
           has_wif="false"
           if [ -n "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ] && [ -n "${{ secrets.GCP_SERVICE_ACCOUNT }}" ]; then
@@ -47,7 +49,7 @@ jobs:
           fi
 
           has_key="false"
-          if [ -n "${{ secrets.GCP_SA_KEY }}" ]; then
+          if [ ${#SA_KEY} -gt 10 ]; then
             has_key="true"
           fi
 
