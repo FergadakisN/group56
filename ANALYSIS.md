@@ -1,6 +1,6 @@
 # In-Depth Change Analysis
 
-This revision enumerates the touched files with emphasis on the largest behavioral changes. Links use workspace paths.
+This revision enumerates touched files with emphasis on the largest behavioral changes. Links use workspace paths.
 
 ## Runtime and Core Logic
 
