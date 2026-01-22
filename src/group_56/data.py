@@ -21,7 +21,7 @@ import pandas as pd
 import typer
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
-from torchvision import models  # type: ignore[import-untyped]
+from torchvision import models
 
 # ============================================================
 # PART A) PREPROCESSING
@@ -299,32 +299,20 @@ def make_dataloaders(
 
     persistent = config.persistent_workers and config.num_workers > 0
 
-    train_loader = DataLoader(
-        datasets["train"],
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
-        persistent_workers=persistent,
-    )
-    val_loader = DataLoader(
-        datasets["validation"],
-        batch_size=config.batch_size,
-        shuffle=False,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
-        persistent_workers=persistent,
-    )
-    test_loader = DataLoader(
-        datasets["test"],
-        batch_size=config.batch_size,
-        shuffle=False,
-        num_workers=config.num_workers,
-        pin_memory=config.pin_memory,
-        persistent_workers=persistent,
-    )
+    loaders = []
+    for split_name, ds in datasets.items():
+        loaders.append(
+            DataLoader(
+                ds,
+                batch_size=config.batch_size,
+                shuffle=(split_name == "train"),
+                num_workers=config.num_workers,
+                pin_memory=config.pin_memory,
+                persistent_workers=persistent,
+            )
+        )
 
-    return train_loader, val_loader, test_loader, shared_class_to_idx
+    return (*loaders, shared_class_to_idx)
 
 
 # ============================================================

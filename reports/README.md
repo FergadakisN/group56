@@ -112,7 +112,7 @@ will check the repositories and the code to verify your answers.
 * [x] Write some documentation for your application (M32)
 * [ ] Publish the documentation to GitHub Pages (M32)
 * [x] Revisit your initial project description. Did the project turn out as you wanted?
-* [ ] Create an architectural diagram over your MLOps pipeline
+* [x] Create an architectural diagram over your MLOps pipeline
 * [x] Make sure all group members have an understanding about all parts of the project
 * [x] Uploaded all your code to GitHub
 
@@ -173,7 +173,7 @@ s252976, s253129, s243131, s253154
 
 We managed dependencies using conda environments to ensure isolation and reproducibility across different machines. All required Python packages and their exact versions are listed in the requirements.txt file, allowing every team member to work with the same software setup and avoid dependency conflicts.
 To obtain an exact copy of the project environment, a new team member must first clone the repository and move into the project directory. Then, a new conda environment is created to keep dependencies isolated from other projects. Once the environment is active, all necessary libraries are installed directly from the requirements.txt file using pip. The full process is shown below:
-git clone https://github.com/FergadakisN/group56.git
+git clone [https://github.com/FergadakisN/group56.git](https://github.com/FergadakisN/group56.git)
 cd group56
 conda create -n myenv
 conda activate myenv
@@ -209,7 +209,7 @@ The overall structure is initialized with the provided cookiecutter template. We
 >
 > Answer:
 
-In this project we followed code quality and formatting rules (PEP 8 style, consistent naming, docstrings, type hints, and organized imports) to keep the code readable.Ruff was used for both linting and formatting, while we used mypy to check typing.For documentation, we use module and function docstrings plus the project README/report to describe purpose and usage. Finally, we implemented automated ruff checks and ruff fixes using pre-commit configuration.
+In this project we followed code quality and formatting rules (PEP 8 style, consistent naming, docstrings, type hints, and organized imports) to keep the code readable. Ruff was used for both linting and formatting, while we used mypy to check typing. For documentation, we use module and function docstrings plus the project README/report to describe purpose and usage. Finally, we implemented automated ruff checks and ruff fixes using pre-commit configuration.
 These concepts matter in larger projects because consistent style reduces cognitive load, catches bugs early, and makes code reviews faster. Typing is especially helpful when the team grows, because it clarifies inputs/outputs and prevents misuse across modules. Documentation preserves context, so new contributors can onboard quickly and changes are safer over time. Together, linting, formatting, typing, and docs create a shared standard that keeps the project maintainable and reliable.
 
 ## Version control
