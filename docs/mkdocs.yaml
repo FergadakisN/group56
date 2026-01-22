@@ -20,7 +20,7 @@ plugins:
             show_signature_annotations: true
 
 nav:
-  - Home: index.md
+  - Home: USAGE.md
   - Deployment:
       - Cloud Run Deployment: CLOUD_RUN_DEPLOYMENT.md
       - Load Testing: LOAD_TESTING.md
@@ -28,4 +28,4 @@ nav:
       - System Monitoring (M28): MONITORING.md
       - Data Drift Detection (M27): DATA_DRIFT_DETECTION.md
   - Project Summary:
-      - Week 2 Summary: WEEK2_SUMMARY.md
+      - Week 2 Summary: WEEK_2_IMPLEMENTATION_REPORT.md
