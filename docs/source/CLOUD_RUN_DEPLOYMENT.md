@@ -16,7 +16,7 @@ If you already have a trained model, deploy in 5 minutes:
 
 ```bash
 export PROJECT_ID="fish-mlops"
-export REGION="us-central1"
+export REGION="europe-west-1"
 export SERVICE_NAME="fish-classifier-api"
 export ARTIFACT_REPO="cloud-run-source-deploy"
 export GCS_BUCKET="fish_mlops"
@@ -56,7 +56,7 @@ curl -s $SERVICE_URL/health | jq .
 ```bash
 # Set your project ID
 export PROJECT_ID="your-gcp-project-id"
-export REGION="us-central1"
+export REGION="europe-west-1"
 export SERVICE_NAME="fish-classifier-api"
 
 # Authenticate and set project
@@ -205,8 +205,8 @@ gcloud run logs read $SERVICE_NAME --region $REGION --limit 50 --follow
 
 ### Verified Working Deployment
 
-- **Service URL**: [https://fish-classifier-api-170418683866.us-central1.run.app](https://fish-classifier-api-170418683866.us-central1.run.app)
-- **Image**: us-central1-docker.pkg.dev/fish-mlops/cloud-run-source-deploy/fish-classifier-api:v3
+- **Service URL**: [https://fish-classifier-api-170418683866.europe-west-1.run.app](https://fish-classifier-api-170418683866.europe-west-1.run.app)
+- **Image**: europe-west-1-docker.pkg.dev/fish-mlops/cloud-run-source-deploy/fish-classifier-api:v3
 - **Model Source**: gs://fish_mlops/models/fish_classifier.pt (43.6 MB)
 - **Status**: ✅ Healthy, model_loaded: true on CPU
 
@@ -220,7 +220,7 @@ gcloud run logs read $SERVICE_NAME --region $REGION --limit 50 --follow
 ### Health Check Response
 
 ```bash
-$ curl -s https://fish-classifier-api-170418683866.us-central1.run.app/health | jq .
+$ curl -s https://fish-classifier-api-170418683866.europe-west-1.run.app/health | jq .
 {
   "status": "healthy",
   "model_loaded": true,
@@ -232,12 +232,12 @@ $ curl -s https://fish-classifier-api-170418683866.us-central1.run.app/health | 
 
 ### Environment Variables
 
-| Variable | Description | Required | Default |
-| ---------- | ------------- | ---------- | ---------- |
-| `GCS_BUCKET` | GCS bucket name for model storage | No | - |
-| `GCS_MODEL_OBJECT` | Path to model in GCS (e.g., `models/fish_classifier.pt`) | No | - |
-| `PORT` | API server port | No | `8080` |
-| `MODEL_PATH` | Local fallback path to model | No | `models/best.pt` |
+| Variable           | Description                                              | Required | Default          |
+| ------------------ | -------------------------------------------------------- | -------- | ---------------- |
+| `GCS_BUCKET`       | GCS bucket name for model storage                        | No       | -                |
+| `GCS_MODEL_OBJECT` | Path to model in GCS (e.g., `models/fish_classifier.pt`) | No       | -                |
+| `PORT`             | API server port                                          | No       | `8080`           |
+| `MODEL_PATH`       | Local fallback path to model                             | No       | `models/best.pt` |
 
 ### Resource Configuration
 

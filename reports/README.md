@@ -52,69 +52,69 @@ will check the repositories and the code to verify your answers.
 
 ### Week 1
 
-* [x] Create a git repository (M5)
-* [x] Make sure that all team members have write access to the GitHub repository (M5)
-* [x] Create a dedicated environment for you project to keep track of your packages (M2)
-* [x] Create the initial file structure using cookiecutter with an appropriate template (M6)
-* [x] Fill out the `data.py` file such that it downloads whatever data you need and preprocesses it (if necessary) (M6)
-* [x] Add a model to `model.py` and a training procedure to `train.py` and get that running (M6)
-* [x] Remember to either fill out the `requirements.txt`/`requirements_dev.txt` files or keeping your
-    `pyproject.toml`/`uv.lock` up-to-date with whatever dependencies that you are using (M2+M6)
-* [x] Remember to comply with good coding practices (`pep8`) while doing the project (M7)
-* [x] Do a bit of code typing and remember to document essential parts of your code (M7)
-* [x] Setup version control for your data or part of your data (M8)
-* [x] Add command line interfaces and project commands to your code where it makes sense (M9)
-* [x] Construct one or multiple docker files for your code (M10)
-* [x] Build the docker files locally and make sure they work as intended (M10)
-* [x] Write one or multiple configurations files for your experiments (M11)
-* [ ] Used Hydra to load the configurations and manage your hyperparameters (M11)
-* [ ] Use profiling to optimize your code (M12)
-* [x] Use logging to log important events in your code (M14)
-* [x] Use Weights & Biases to log training progress and other important metrics/artifacts in your code (M14)
-* [x] Consider running a hyperparameter optimization sweep (M14)
-* [ ] Use PyTorch-lightning (if applicable) to reduce the amount of boilerplate in your code (M15)
+- [x] Create a git repository (M5)
+- [x] Make sure that all team members have write access to the GitHub repository (M5)
+- [x] Create a dedicated environment for you project to keep track of your packages (M2)
+- [x] Create the initial file structure using cookiecutter with an appropriate template (M6)
+- [x] Fill out the `data.py` file such that it downloads whatever data you need and preprocesses it (if necessary) (M6)
+- [x] Add a model to `model.py` and a training procedure to `train.py` and get that running (M6)
+- [x] Remember to either fill out the `requirements.txt`/`requirements_dev.txt` files or keeping your
+      `pyproject.toml`/`uv.lock` up-to-date with whatever dependencies that you are using (M2+M6)
+- [x] Remember to comply with good coding practices (`pep8`) while doing the project (M7)
+- [x] Do a bit of code typing and remember to document essential parts of your code (M7)
+- [x] Setup version control for your data or part of your data (M8)
+- [x] Add command line interfaces and project commands to your code where it makes sense (M9)
+- [x] Construct one or multiple docker files for your code (M10)
+- [x] Build the docker files locally and make sure they work as intended (M10)
+- [x] Write one or multiple configurations files for your experiments (M11)
+- [ ] Used Hydra to load the configurations and manage your hyperparameters (M11)
+- [ ] Use profiling to optimize your code (M12)
+- [x] Use logging to log important events in your code (M14)
+- [x] Use Weights & Biases to log training progress and other important metrics/artifacts in your code (M14)
+- [x] Consider running a hyperparameter optimization sweep (M14)
+- [ ] Use PyTorch-lightning (if applicable) to reduce the amount of boilerplate in your code (M15)
 
 ### Week 2
 
-* [x] Write unit tests related to the data part of your code (M16)
-* [x] Write unit tests related to model construction and or model training (M16)
-* [x] Calculate the code coverage (M16)
-* [x] Get some continuous integration running on the GitHub repository (M17)
-* [x] Add caching and multi-os/python/pytorch testing to your continuous integration (M17)
-* [x] Add a linting step to your continuous integration (M17)
-* [x] Add pre-commit hooks to your version control setup (M18)
-* [x] Add a continues workflow that triggers when data changes (M19)
-* [x] Add a continues workflow that triggers when changes to the model registry is made (M19)
-* [x] Create a data storage in GCP Bucket for your data and link this with your data version control setup (M21)
-* [x] Create a trigger workflow for automatically building your docker images (M21)
-* [x] Get your model training in GCP using either the Engine or Vertex AI (M21)
-* [x] Create a FastAPI application that can do inference using your model (M22)
-* [x] Deploy your model in GCP using either Functions or Run as the backend (M23)
-* [x] Write API tests for your application and setup continues integration for these (M24)
-* [x] Load test your application (M24)
-* [ ] Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25)
-* [ ] Create a frontend for your API (M26)
+- [x] Write unit tests related to the data part of your code (M16)
+- [x] Write unit tests related to model construction and or model training (M16)
+- [x] Calculate the code coverage (M16)
+- [x] Get some continuous integration running on the GitHub repository (M17)
+- [x] Add caching and multi-os/python/pytorch testing to your continuous integration (M17)
+- [x] Add a linting step to your continuous integration (M17)
+- [x] Add pre-commit hooks to your version control setup (M18)
+- [x] Add a continues workflow that triggers when data changes (M19)
+- [x] Add a continues workflow that triggers when changes to the model registry is made (M19)
+- [x] Create a data storage in GCP Bucket for your data and link this with your data version control setup (M21)
+- [x] Create a trigger workflow for automatically building your docker images (M21)
+- [x] Get your model training in GCP using either the Engine or Vertex AI (M21)
+- [x] Create a FastAPI application that can do inference using your model (M22)
+- [x] Deploy your model in GCP using either Functions or Run as the backend (M23)
+- [x] Write API tests for your application and setup continues integration for these (M24)
+- [x] Load test your application (M24)
+- [ ] Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25)
+- [ ] Create a frontend for your API (M26)
 
 ### Week 3
 
-* [x] Check how robust your model is towards data drifting (M27)
-* [x] Setup collection of input-output data from your deployed application (M27)
-* [x] Deploy to the cloud a drift detection API (M27)
-* [x] Instrument your API with a couple of system metrics (M28)
-* [x] Setup cloud monitoring of your instrumented application (M28)
-* [x] Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)
-* [ ] If applicable, optimize the performance of your data loading using distributed data loading (M29)
-* [ ] If applicable, optimize the performance of your training pipeline by using distributed training (M30)
-* [ ] Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)
+- [x] Check how robust your model is towards data drifting (M27)
+- [x] Setup collection of input-output data from your deployed application (M27)
+- [x] Deploy to the cloud a drift detection API (M27)
+- [x] Instrument your API with a couple of system metrics (M28)
+- [x] Setup cloud monitoring of your instrumented application (M28)
+- [x] Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)
+- [ ] If applicable, optimize the performance of your data loading using distributed data loading (M29)
+- [ ] If applicable, optimize the performance of your training pipeline by using distributed training (M30)
+- [ ] Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)
 
 ### Extra
 
-* [x] Write some documentation for your application (M32)
-* [ ] Publish the documentation to GitHub Pages (M32)
-* [x] Revisit your initial project description. Did the project turn out as you wanted?
-* [x] Create an architectural diagram over your MLOps pipeline
-* [x] Make sure all group members have an understanding about all parts of the project
-* [x] Uploaded all your code to GitHub
+- [x] Write some documentation for your application (M32)
+- [ ] Publish the documentation to GitHub Pages (M32)
+- [x] Revisit your initial project description. Did the project turn out as you wanted?
+- [x] Create an architectural diagram over your MLOps pipeline
+- [x] Make sure all group members have an understanding about all parts of the project
+- [x] Uploaded all your code to GitHub
 
 ## Group information
 
@@ -151,7 +151,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
---- question 3 fill here ---
+--- No, we only used frameworks/packages mentioned in the course.---
 
 ## Coding environment
 
@@ -194,7 +194,7 @@ Following these steps ensures that the development environment is fully reproduc
 >
 > Answer:
 
---- The overall structure is initialized with the provided cookiecutter template. We filled out almost every folder in our project. We have added some files in the /src/group_56 folder.... ---
+--- The overall structure is initialized with the cookiecutter template. We tried to follow the cookiecutter structure as much as possible. The core code lives in src/group_56 (data loading/preprocessing in data.py, model definition in model.py, evaluation in evaluate.py, and the FastAPI app in api.py). Data is organized under data/ with raw/ and processed/ and tracked via DVC(data.dvc). Experiment configs live in configs/ (train+sweep configs), tests are in tests/ (unit,API, and load tests), and documentation in docs/ (mkdocs). We kept reports/ for the exam report and figures, and added infrastructure files such as dockerfiles/ for train/eval/api images,scripts/ for GCP monitoring setup, cloudbuild.yaml, config.yaml, and run outputs in outputs//wandb. We didn't do major deviations or removals from the template.We mainly extended it with extra configs and deployment/monitoring assets. ---
 
 ### Question 6
 
@@ -229,7 +229,10 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 7 fill here ---
+--- In total we have implemented 5 tests in the test_data.py file, 9 in test_model.py, 13 in test_api.py, ... . In test_data.py we verify correct data preprocessing and dataloaders, including proper splitting, label alignment, valid tensor outputs, and absence of data leakage.
+In test_model.py we test model construction, training logic, checkpointing, seeding, and validation metrics.
+In test_api.py we validate the FastAPI endpoints, covering health checks, model loading, error handling, and prediction correctness.
+... ---
 
 ### Question 8
 
@@ -240,11 +243,11 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Example:
 > *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our \*\*
->*code and even if we were then...\*
+> *code and even if we were then...\*
 >
 > Answer:
 
---- question 8 fill here ---
+--- ... COVERAGE ... Even with 100% unit-test coverage, I would not fully trust the code to be error-free. Code coverage only shows that the code has been executed during tests, not that it has been correctly validated. Tests can run through every line while still checking the wrong behavior or only covering the most common cases. ---
 
 ### Question 9
 
@@ -310,7 +313,14 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 12 fill here ---
+--- We configured experiments using JSON configuration files and W&B sweeps to ensure reproducibility and systematic exploration.
+
+Training parameters can be overridden via a JSON file passed with the --config-path argparse argument, which defines settings such as the number of epochs, batch size, learning rate, weight decay. An example run looks like:
+python -m group_56.train --config-path configs/train_example.json
+For hyperparameter optimization, we define a sweep configuration in configs/sweep.yaml. The sweep is launched with:
+wandb sweep configs/sweep.yaml
+wandb agent sweep-id
+This setup ensures that all experiments are fully reproducible and automatically logged to Weights & Biases, with the exact configuration of each run stored and available for easy comparison and analysis at a later stage. ---
 
 ### Question 13
 
@@ -325,7 +335,8 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 13 fill here ---
+--- We ensure full reproducibility throughout the project by combining fixed random seeds, version-controlled configuration files, and systematic experiment tracking. All training runs explicitly set random seeds for Python, NumPy, and PyTorch, ensuring deterministic behavior whenever possible. Hyperparameters and training options are stored in JSON configuration files and sweep definitions, which are tracked in version control and passed directly to the training script.
+In addition, every experiment is logged to Weights & Biases, where the complete configuration, training and validation metrics, and relevant artifacts such as model checkpoints are automatically recorded. Checkpoints and detailed training logs are also saved locally on a per-run basis. This setup makes each experiment fully traceable and reproducible: any run can be rerun exactly by reusing the same configuration file and seed, or by restoring the precise run configuration directly from W&B for further analysis or comparison. ---
 
 ### Question 14
 
@@ -342,7 +353,20 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 14 fill here ---
+---
+
+[this figure](figures/question_14_1.png)
+[this figure](figures/question_14_2.png)
+[this figure](figures/question_14_3.png)
+[this figure](figures/question_14_4.png)
+
+The screenshots show several experiments tracked using Weights & Biases (W&B), where we monitored the evolution of training loss, training accuracy, validation loss, and validation accuracy over multiple epochs. These metrics are fundamental for understanding both how well the model fits the training data and how effectively it generalizes to unseen samples.
+
+The training loss curves consistently decrease across all runs, indicating that the optimization process is working as expected and that the model is learning meaningful representations from the data. This is reflected in the training accuracy, which increases steadily and, in some runs, reaches relatively high values. Together, these metrics confirm that the model can successfully learn the training distribution.
+
+To evaluate generalization performance, we also track validation loss and validation accuracy. These metrics are particularly important, as they provide an estimate of how the model would perform on new, unseen data. While validation loss decreases over time and validation accuracy improves, both metrics consistently lag behind their training counterparts. The visible gap between training and validation curves suggests the presence of overfitting, where the model fits the training data more closely than the validation data.
+
+By logging multiple runs on the same plots, W&B allows direct comparison between different hyperparameter configurations, such as learning rate, batch size, or regularization strength. This makes it easier to identify training setups that lead to more stable convergence and better validation performance. Overall, tracking these four metrics provides a clear and interpretable overview of the learning dynamics and is essential for diagnosing overfitting and guiding further model improvements. ---
 
 ### Question 15
 
@@ -384,7 +408,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 16 fill here ---
+--- We debugged experiments by combining fast feedback loops and structured logging. For most issues we reduced the run size (few epochs, small batch size, CPU) and reproduced errors locally, then used log statements and the training logs to trace where things broke. Unit tests for data and model components helped isolate bugs early, and API/load tests were used to catch deployment issues. When needed, we also relied on IDE breakpoints or simple print‑based checks of tensor shapes, dataloader outputs, and config values. W&B runs made it easy to spot abnormal metrics or NaNs. We did not run formal profiling tools (e.g., cProfile, torch profiler); the project isn’t “perfect,” and profiling would be the next step if we needed to optimize training time or data loading. ---
 
 ## Working in the cloud
 
@@ -416,7 +440,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 18 fill here ---
+--- We used GCP Compute Engine indirectly via Vertex AI custom training jobs. Our training container (built from our train.dockerfile and stored in Artifact Registry) ran on Vertex AI-managed VMs, and the job pulled data from our GCS/DVC remote and logged metrics to W&B. ---
 
 ### Question 19
 
@@ -434,7 +458,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 20 fill here ---
+--- [this figure](figures/question_20.png) ---
 
 ### Question 21
 
