@@ -1,7 +1,7 @@
 """
 FastAPI application for fish species classification.
 
-This API provides endpoints for model inference, health checks and model metadata.
+This API provides endpoints for model inference, health checks, and model metadata.
 """
 
 from __future__ import annotations
