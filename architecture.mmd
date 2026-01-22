@@ -1,0 +1,64 @@
+flowchart TB
+  subgraph "GitHub repo / codebase"
+    direction LR
+    R["Code repo"]
+    DVCMETA["DVC metadata (.dvc in repo)"]
+    S["Data prep (src/group_56/data.py)"]
+  end
+
+  subgraph "GitHub Actions (CI/CD)"
+    direction LR
+    CI["GitHub Actions (tests + lint)"]
+    BUILD["Build Docker image"]
+    PUSH["Push image"]
+    DEPLOY["Deploy to Cloud Run"]
+  end
+
+  subgraph "Storage"
+    direction LR
+    DVCREMOTE["DVC remote (GCS bucket)"]
+    RAW["Raw data (GCS)"]
+    PROC["Processed splits (GCS)"]
+    MODELREG["Model artifacts (GCS bucket)"]
+    IMGREG["Container registry (GCR/Artifact Registry)"]
+  end
+
+  subgraph "Training"
+    direction LR
+    RUNTIME["Training runtime (Vertex AI)"]
+    TRAIN["Training job (src/train_model.py)"]
+    EVAL["Evaluation (val/test metrics)"]
+    GATE["Promote best model (threshold/manual)"]
+    WB["W&B logging"]
+  end
+
+  subgraph "Serving"
+    direction LR
+    API["Cloud Run service (FastAPI /predict, loads model from GCS at startup)"]
+  end
+
+  subgraph "Monitoring"
+    direction LR
+    SVCMON["Service monitoring (latency/errors)"]
+    MODELMON["Data/model monitoring (drift)"]
+    ORCH["Orchestrator / Pipeline trigger (manual or scheduled)"]
+  end
+
+  R --> CI -->|CI pipeline| BUILD -->|docker push| PUSH -->|deploy| DEPLOY --> API
+  PUSH -->|push image| IMGREG
+  DEPLOY -->|pull image| IMGREG
+  R --> DVCMETA
+  DVCMETA -->|dvc pull/push| DVCREMOTE
+  DVCREMOTE -->|stored in| RAW
+  DVCREMOTE -->|stored in| PROC
+  RAW -->|input| S
+  S -->|produces| PROC
+  R -->|code| TRAIN
+  PROC --> TRAIN
+  RUNTIME --> TRAIN
+  TRAIN --> EVAL --> GATE --> MODELREG
+  TRAIN --> WB
+  EVAL --> WB
+  ORCH -->|run pipeline| S --> TRAIN --> EVAL --> GATE --> MODELREG
+  MODELREG -->|download model on startup| API
+  API --> SVCMON --> MODELMON -->|drift alert / schedule| ORCH
