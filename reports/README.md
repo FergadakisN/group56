@@ -291,7 +291,11 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 11 fill here ---
+--- We have organized our continuous integration into two GitHub Actions workflows: one focused on unit testing with coverage and one focused on linting/formatting. The main workflow (tests.yaml) runs on every push and pull request to main. It uses a matrix strategy across three operating systems (ubuntu‑latest, windows‑latest, macos‑latest) and two Python versions (3.11 and 3.12) so we can detect OS‑ and version‑specific issues early. The job installs dependencies, installs the package in editable mode, and runs our unit tests with pytest under coverage, reporting coverage at the end. It also disables W&B logging during CI to avoid external calls.
+
+We also maintain a separate linting.yaml workflow that runs ruff check and ruff format on ubuntu‑latest. This gives us a consistent formatting and linting gate that mirrors our local development rules. For dependency caching, we use the actions/setup-python pip cache in the test workflow, which speeds up repeated CI runs by reusing installed wheels and packages across jobs. Overall, the CI setup validates both code correctness (tests + coverage) and code quality (linting/formatting) before changes are merged.
+
+An example workflow definition can be seen here: tests.yaml. ---
 
 ## Running code and tracking experiments
 
@@ -573,7 +577,13 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- The overall architecture of our system can be describe by [this figure](figures/mlops_architecture.png) ... ---
+--- The overall architecture of our system can be describe by [this figure](figures/mlops_architecture.png). 
+
+The diagram summarizes our end‑to‑end MLOps workflow. The starting point is the GitHub repository where all code, configuration, and DVC metadata live. When code is pushed, GitHub Actions runs CI (tests, linting/formatting) to enforce correctness and quality. The same CI/CD pipeline builds a Docker image, pushes it to Artifact Registry, and deploys the updated service to Cloud Run.
+
+Data is versioned with DVC: the .dvc metadata in the repo points to a GCS bucket that stores the raw images and the processed splits. Data preparation (data.py) pulls raw data, performs filtering/splitting, and writes processed splits back to GCS. Training runs on Vertex AI using the training script, reads the processed data, and logs metrics to W&B. Evaluation is performed on validation/test splits, and only models that pass the promotion criteria are stored as artifacts in a dedicated GCS bucket.
+
+Serving is handled by a FastAPI app running on Cloud Run. At startup, the service downloads the latest promoted model artifact from GCS and loads it into memory for inference. Monitoring is split into service monitoring (latency/errors) and model/data monitoring (drift). A drift or schedule event triggers an orchestrator step (manual or scheduled), which reruns the data pipeline and training to refresh the model. Overall, the system provides a reproducible path from data and code changes to training, evaluation, deployment, and monitored inference in production.---
 
 ### Question 30
 
