@@ -16,6 +16,7 @@ from typing import (
 import torch
 import torch.nn as nn
 import typer
+import wandb
 from torch.utils.data import DataLoader
 
 from .data import DataConfig, make_dataloaders
@@ -122,14 +123,19 @@ def main(
     ckpt_path: Annotated[str, typer.Option(help="Path to checkpoint (.pt)")] = "outputs/resnet_run/best.pt",
     split: Annotated[str, typer.Option(help="Split to evaluate: test | val")] = "test",
     compute_loss: bool = True,
+    use_wandb: bool = True,
+    wandb_project: str = "group56-fish",
+    wandb_entity: str | None = None,
+    wandb_run_name: str = "eval",
+    wandb_group: str | None = None,
+    wandb_job_type: str = "eval",
 ) -> None:
     # Now Path(ckpt_path) will correctly receive a string
     dev = resolve_device(device)
-    ckpt = load_checkpoint(Path(ckpt_path), dev)
     typer.echo(f"Using device: {dev}")
 
-    # Load checkpoint metadata
     ckpt = load_checkpoint(Path(ckpt_path), dev)
+
     ckpt_arch: str = ckpt.get("arch", arch)
     class_to_idx_ckpt: dict[str, int] | None = ckpt.get("class_to_idx")
 
@@ -141,46 +147,87 @@ def main(
     if num_classes is None:
         raise ValueError("num_classes not found in checkpoint.")
 
-    # Prepare DataLoaders
-    data_cfg = DataConfig(
-        processed_dir=processed_dir,
-        arch=ckpt_arch,
-        batch_size=batch_size,
-        num_workers=num_workers,
-        rebuild_processed=False,
-        wipe_output_dir=False,
-    )
-    loaders = make_dataloaders(data_cfg)
-    train_loader, val_loader, test_loader, class_to_idx_data = loaders
+    run = None
+    if use_wandb:
+        run = wandb.init(
+            project=wandb_project,
+            entity=wandb_entity,
+            name=wandb_run_name,
+            group=wandb_group,
+            job_type=wandb_job_type,
+            config={
+                "split": split,
+                "ckpt_path": ckpt_path,
+                "processed_dir": processed_dir,
+                "arch": ckpt_arch,
+                "batch_size": batch_size,
+                "num_workers": num_workers,
+                "device": str(dev),
+                "compute_loss": compute_loss,
+                "num_classes": num_classes,
+            },
+        )
 
-    # Select Split
-    split_map = {"train": train_loader, "val": val_loader, "validation": val_loader, "test": test_loader}
+    result_str = f"{split} evaluation failed."
+    try:
+        # Prepare DataLoaders
+        data_cfg = DataConfig(
+            processed_dir=processed_dir,
+            arch=ckpt_arch,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            rebuild_processed=False,
+            wipe_output_dir=False,
+        )
+        loaders = make_dataloaders(data_cfg)
+        train_loader, val_loader, test_loader, class_to_idx_data = loaders
 
-    if split not in split_map:
-        raise ValueError(f"Invalid split '{split}'. Use train, validation, or test.")
+        # Select Split
+        split_map = {"train": train_loader, "val": val_loader, "validation": val_loader, "test": test_loader}
 
-    loader = split_map[split]
+        if split not in split_map:
+            raise ValueError(f"Invalid split '{split}'. Use train, validation, or test.")
 
-    # Warning for class index mismatch
-    if class_to_idx_ckpt is not None and class_to_idx_ckpt != class_to_idx_data:
-        typer.echo("Warning: Checkpoint class mapping differs from dataset mapping!")
+        loader = split_map[split]
 
-    # Initialize and load model
-    model = build_resnet(
-        num_classes=num_classes,
-        arch=ckpt_arch,
-        pretrained=False,
-    ).to(dev)
-    model.load_state_dict(ckpt["model_state_dict"])
+        # Warning for class index mismatch
+        if class_to_idx_ckpt is not None and class_to_idx_ckpt != class_to_idx_data:
+            typer.echo("Warning: Checkpoint class mapping differs from dataset mapping!")
 
-    criterion = nn.CrossEntropyLoss() if compute_loss else None
+        # Initialize and load model
+        model = build_resnet(
+            num_classes=num_classes,
+            arch=ckpt_arch,
+            pretrained=False,
+        ).to(dev)
+        model.load_state_dict(ckpt["model_state_dict"])
 
-    # Run Evaluation
-    loss, acc = evaluate(model=model, loader=loader, device=dev, criterion=criterion)
+        criterion = nn.CrossEntropyLoss() if compute_loss else None
 
-    result_str = f"{split} acc: {acc:.4f}"
-    if compute_loss:
-        result_str = f"{split} loss: {loss:.4f} | " + result_str
+        # Run Evaluation
+        loss, acc = evaluate(model=model, loader=loader, device=dev, criterion=criterion)
+        if run is not None:
+            metrics = {
+                f"{split}/acc": acc,
+            }
+            if compute_loss:
+                metrics[f"{split}/loss"] = loss
+
+            wandb.log(metrics)
+            wandb.summary.update(metrics)
+
+            # Optional: save the evaluated checkpoint file as an artifact reference
+            art = wandb.Artifact(f"{wandb_run_name}-{split}", type="evaluation")
+            art.add_file(str(Path(ckpt_path)))
+            wandb.log_artifact(art)
+
+        result_str = f"{split} acc: {acc:.4f}"
+        if compute_loss:
+            result_str = f"{split} loss: {loss:.4f} | " + result_str
+
+    finally:
+        if run is not None:
+            wandb.finish()
 
     typer.echo(result_str)
 
