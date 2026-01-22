@@ -573,7 +573,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 29 fill here ---
+--- The overall architecture of our system can be describe by [this figure](figures/mlops_architecture.png) ... ---
 
 ### Question 30
 
