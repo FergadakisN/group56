@@ -244,7 +244,11 @@ These concepts matter in larger projects because consistent style reduces cognit
 >
 > Answer:
 
---- question 8 fill here ---
+---  The overall test coverage achieved in the project is 58%, as shown in the coverage report for the main source files in the src/group_56 directory. While this value does not reach full (100%) unit test coverage, it is important to emphasize that higher coverage alone does not guarantee correct or reliable software behavior. Code coverage only measures whether lines of code are executed during testing, not whether the underlying logic has been thoroughly validated.
+
+Even with 100% coverage, tests may still be incomplete or misleading if they verify incorrect behavior, rely on weak assertions, or focus only on common execution paths while ignoring edge cases and failure scenarios. Conversely, some parts of the code—such as training loops, logging, or hardware-dependent logic—are difficult to test meaningfully with unit tests and may reasonably remain partially uncovered.
+
+For these reasons, we treat coverage as a useful diagnostic metric rather than a correctness guarantee. It helps identify untested areas of the codebase, but confidence in correctness ultimately comes from a combination of well-designed tests, manual inspection, realistic validation experiments, and careful evaluation of model outputs. ---
 
 ### Question 9
 
