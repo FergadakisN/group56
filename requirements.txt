@@ -38,7 +38,7 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2025.3
 uvicorn==0.34.2
-python-multipart==0.0.9
+python-multipart==0.0.21
 dvc==3.66.1
 dvc-gdrive==3.0.1
 dvc-gs==3.0.2
