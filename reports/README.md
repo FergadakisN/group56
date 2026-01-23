@@ -242,8 +242,8 @@ In test_api.py we validate the FastAPI endpoints, covering health checks, model 
 > Recommended answer length: 100-200 words.
 >
 > Example:
-> *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our \*\*
-> *code and even if we were then...\*
+> _The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our \*_
+> _code and even if we were then...\*_
 >
 > Answer:
 
@@ -298,7 +298,11 @@ For these reasons, we treat coverage as a useful diagnostic metric rather than a
 >
 > Answer:
 
---- question 11 fill here ---
+--- We have organized our continuous integration into two GitHub Actions workflows: one focused on unit testing with coverage and one focused on linting/formatting. The main workflow (tests.yaml) runs on every push and pull request to main. It uses a matrix strategy across three operating systems (ubuntu‑latest, windows‑latest, macos‑latest) and two Python versions (3.11 and 3.12) so we can detect OS‑ and version‑specific issues early. The job installs dependencies, installs the package in editable mode, and runs our unit tests with pytest under coverage, reporting coverage at the end. It also disables W&B logging during CI to avoid external calls.
+
+We also maintain a separate linting.yaml workflow that runs ruff check and ruff format on ubuntu‑latest. This gives us a consistent formatting and linting gate that mirrors our local development rules. For dependency caching, we use the actions/setup-python pip cache in the test workflow, which speeds up repeated CI runs by reusing installed wheels and packages across jobs. Overall, the CI setup validates both code correctness (tests + coverage) and code quality (linting/formatting) before changes are merged.
+
+An example workflow definition can be seen here: [tests.yaml](tests.yaml). ---
 
 ## Running code and tracking experiments
 
@@ -359,10 +363,10 @@ In addition, every experiment is logged to Weights & Biases, where the complete 
 
 ---
 
-[this figure](figures/question_14_1.png)
-[this figure](figures/question_14_2.png)
-[this figure](figures/question_14_3.png)
-[this figure](figures/question_14_4.png)
+[IMAGE 1](figures/question_14_1.png)
+[IMAGE 2](figures/question_14_2.png)
+[IMAGE 3](figures/question_14_3.png)
+[IMAGE 4](figures/question_14_4.png)
 
 The screenshots show several experiments tracked using Weights & Biases (W&B), where we monitored the evolution of training loss, training accuracy, validation loss, and validation accuracy over multiple epochs. These metrics are fundamental for understanding both how well the model fits the training data and how effectively it generalizes to unseen samples.
 
@@ -568,7 +572,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 27 fill here ---
+--- All the group members didn't use any credits since they used always free resources. Working with the cloud has been a little bit challenging due to the intricacies of the Google Cloud Console platform not being user-friendly. We had to grant a lot of permissions, adding Ids, secrets, and a couple of extra features not presented in the lecture to make it work. At the end not everything has been possible to work and we keep having some issues with the permissions for the cloud run. ---
 
 ### Question 28
 
@@ -584,7 +588,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 28 fill here ---
+--- No we didn't implement something extra on the project that is not covered by other questions. ---
 
 ### Question 29
 
@@ -601,7 +605,11 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- The overall architecture of our system can be describe by [this figure](figures/mlops_architecture.png) ... ---
+--- The overall architecture of our system can be describe by [this figure](figures/mlops_architecture.png). The diagram summarizes our end‑to‑end MLOps workflow. The starting point is the GitHub repository where all code, configuration, and DVC metadata live. When code is pushed, GitHub Actions runs CI (tests, linting/formatting) to enforce correctness and quality. The same CI/CD pipeline builds a Docker image, pushes it to Artifact Registry, and deploys the updated service to Cloud Run.
+
+Data is versioned with DVC: the .dvc metadata in the repo points to a GCS bucket that stores the raw images and the processed splits. Data preparation (data.py) pulls raw data, performs filtering/splitting, and writes processed splits back to GCS. Training runs on Vertex AI using the training script, reads the processed data, and logs metrics to W&B. Evaluation is performed on validation/test splits, and only models that pass the promotion criteria are stored as artifacts in a dedicated GCS bucket.
+
+Serving is handled by a FastAPI app running on Cloud Run. At startup, the service downloads the latest promoted model artifact from GCS and loads it into memory for inference. Monitoring is split into service monitoring (latency/errors) and model/data monitoring (drift). A drift or schedule event triggers an orchestrator step (manual or scheduled), which reruns the data pipeline and training to refresh the model. Overall, the system provides a reproducible path from data and code changes to training, evaluation, deployment, and monitored inference in production. ---
 
 ### Question 30
 
@@ -615,7 +623,15 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 30 fill here ---
+--- Throughout the project, we encountered several challenges that significantly slowed down development and required iterative problem solving. At the outset, one of the main difficulties was determining the appropriate placement for each function and code snippet within the project structure. Since we were not initially familiar with working in a modular, production-style codebase, adapting to a structured project layout proved challenging and caused early delays.
+
+As development progressed, we faced additional issues related to data handling. In particular, generating consistent dataset splits and implementing correct preprocessing pipelines required careful consideration. Managing the data lifecycle as a whole was also non-trivial, especially when deciding which artifacts should be tracked using DVC. Ensuring that training, validation, and test sets remained consistent and reproducible across different environments became a central concern.
+
+One of the most significant obstacles involved accessing and using DVC reliably across the team. Configuring DVC with a Google Cloud Storage (GCS) remote proved more complex than expected, primarily due to permission and authentication issues. Service account credentials, bucket access rights, and inconsistent local configurations frequently caused authorization failures or prevented team members from pulling or pushing data. These issues made collaborative data access difficult and required multiple rounds of debugging and reconfiguration.
+
+In addition, integrating cloud-based training and deployment components introduced further complexity. The Vertex AI training environment needed seamless access to the same DVC remote, model artifacts had to be saved correctly to GCS, and the Cloud Run inference service had to load the appropriate model versions. Differences between local and cloud environments—such as missing permissions, misconfigured service accounts, or unavailable files inside containers—led to subtle errors that did not appear during local execution.
+
+To overcome these challenges, we standardized directory structures, clearly documented the storage and bucket layout, and unified DVC configuration and access policies across the team. We validated permissions and connectivity using minimal test commands before running full training jobs and relied on logging and GitHub Actions to reproduce errors efficiently. Once DVC access, storage paths, and cloud permissions were stabilized, the pipeline became significantly more reliable, allowing us to focus on improving model performance and deployment quality. ---
 
 ### Question 31
 
@@ -633,4 +649,16 @@ This setup let us share consistent environments across the team and made it stra
 > _We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code._
 > Answer:
 
---- question 31 fill here ---
+--- All team members contributed actively and equally to the project, both in terms of workload and engagement. While specific responsibilities were divided to ensure efficiency, all major design decisions, debugging sessions, and conceptual questions were discussed collaboratively, and we regularly reviewed and improved each other’s work.
+
+Student s252976 focused primarily on the model development and training pipeline, including transfer learning with ResNet architectures, training logic, hyperparameter tuning  and unit testing.
+
+Student s253154 was responsible for setting up continuous integration (GitHub Actions for tests/linting, OS/Python matrix, caching) and for creating the overall MLOps architecture diagram.
+
+Student s253129 was responsible for data versioning and cloud storage, including configuring DVC, managing the Google Cloud Storage backend, and resolving access and permission issues related to shared data artifacts.
+
+Student s243131 focused primarily on API development and deployment, implementing the inference API and integrating it with the trained models for serving. Help generally assembling all the components together for the pipeline and generally managed the branches on Github.
+
+Despite this division of responsibilities, all team members actively reviewed pull requests, suggested improvements, and contributed fixes across all parts of the codebase. Troubleshooting, architectural decisions, and conceptual questions were typically addressed together as a group to ensure shared understanding and consistency.
+
+Regarding the use of generative AI tools, we used them as a support tool primarily for clarifying concepts, improving code readability and debugging, and refining documentation and report text. All design choices, implementation details, and final code were critically reviewed and adapted by the team to ensure correctness and alignment with course requirements. ---
