@@ -365,9 +365,9 @@ In addition, every experiment is logged to Weights & Biases, where the complete 
 
 ---
 
-[IMAGE 1](figures/question_14_1.png)
-[IMAGE 2](figures/question_14_2.png)
-[IMAGE 3](figures/question_14_3.png)
+![IMAGE 1](figures/question_14_1.png)
+![IMAGE 2](figures/question_14_2.png)
+![IMAGE 3](figures/question_14_3.png)
 
 The screenshots show several experiments tracked using Weights & Biases (W&B), where we monitored the evolution of training loss, training accuracy, validation loss, and validation accuracy over multiple epochs. These metrics are fundamental for understanding both how well the model fits the training data and how effectively it generalizes to unseen samples.
 
@@ -467,7 +467,7 @@ During execution, the training jobs accessed datasets stored in Google Cloud Sto
 >
 > Answer:
 
---- [GCP bucket](figures/quest_19.png) ---
+--- ![GCP bucket](figures/quest_19.png) ---
 
 ### Question 20
 
@@ -476,7 +476,7 @@ During execution, the training jobs accessed datasets stored in Google Cloud Sto
 >
 > Answer:
 
---- [this figure](figures/question_20.png) ---
+--- ![this figure](figures/question_20.png) ---
 
 ### Question 21
 
@@ -485,7 +485,7 @@ During execution, the training jobs accessed datasets stored in Google Cloud Sto
 >
 > Answer:
 
---- [GCP cloud build history](figures/question_21_build_images.png) ---
+--- ![GCP cloud build history](figures/question_21_build_images.png) ---
 
 ### Question 22
 
@@ -616,7 +616,7 @@ During execution, the training jobs accessed datasets stored in Google Cloud Sto
 >
 > Answer:
 
---- The overall architecture of our system can be describe by [this figure](figures/mlops_architecture.png). The diagram summarizes our end‑to‑end MLOps workflow. The starting point is the GitHub repository where all code, configuration, and DVC metadata live. When code is pushed, GitHub Actions runs CI (tests, linting/formatting) to enforce correctness and quality. The same CI/CD pipeline builds a Docker image, pushes it to Artifact Registry, and deploys the updated service to Cloud Run.
+--- The overall architecture of our system can be describe by ![architecture](figures/mlops_architecture.png). The diagram summarizes our end‑to‑end MLOps workflow. The starting point is the GitHub repository where all code, configuration, and DVC metadata live. When code is pushed, GitHub Actions runs CI (tests, linting/formatting) to enforce correctness and quality. The same CI/CD pipeline builds a Docker image, pushes it to Artifact Registry, and deploys the updated service to Cloud Run.
 
 Data is versioned with DVC: the .dvc metadata in the repo points to a GCS bucket that stores the raw images and the processed splits. Data preparation (data.py) pulls raw data, performs filtering/splitting, and writes processed splits back to GCS. Training runs on Vertex AI using the training script, reads the processed data, and logs metrics to W&B. Evaluation is performed on validation/test splits, and only models that pass the promotion criteria are stored as artifacts in a dedicated GCS bucket.
 
