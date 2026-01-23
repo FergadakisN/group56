@@ -507,7 +507,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 23 fill here ---
+--- We did manage to write an API for our model. We used FastAPI to create a comprehensive REST API for the fish species classifier. The API includes several key endpoints: /predict for image classification, /health for status checks, /model/info for model metadata, and /metrics for Prometheus metrics. The API accepts image uploads via multipart form data and returns predictions with confidence scores and top-k predictions. We also implemented Prometheus metrics to track request counts, error rates, and prediction latency, which enables monitoring and performance analysis. The API uses background tasks to log predictions and extracted features to a CSV database for data drift detection and analysis. ---
 
 ### Question 24
 
@@ -523,7 +523,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 24 fill here ---
+--- We deployed the API both locally and attempted cloud deployment. Locally, the API runs successfully using FastAPI/Uvicorn within a Docker container. For cloud deployment, we containerized the API using a Cloud Run-optimized Dockerfile and pushed it to GCP Artifact Registry. However, due to permission and authentication issues with GCP service accounts and Cloud Run configuration, the full production deployment encountered challenges. Users can invoke the local service with: `curl -X POST http://localhost:8000/predict -F "file=@fish.jpg`. For the intended cloud deployment, requests would be sent to the Cloud Run service URL in the same format. The API automatically downloads the latest model checkpoint from GCS on startup if deployed to the cloud. ---
 
 ### Question 25
 
@@ -538,7 +538,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 25 fill here ---
+--- We performed both unit testing and load testing of the API. For unit testing, we used pytest with 13 test cases covering health checks, model loading, invalid inputs, prediction endpoints, and response validation. The tests verify endpoint correctness, error handling, and prediction consistency. For load testing, we used Locust to simulate concurrent users and traffic patterns against the API. We defined three user profiles: FishClassifierUser for normal traffic patterns, StressTestUser for high-load scenarios with short wait times, and SpikeTestUser for burst traffic. The load tests showed that the API handled moderate concurrent load well, with latencies typically under 500ms, but under extreme stress (many concurrent requests) some degradation occurred, demonstrating the need for appropriate resource allocation and autoscaling. ---
 
 ### Question 26
 
@@ -553,7 +553,7 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- question 26 fill here ---
+--- We implemented comprehensive monitoring of the deployed API. On the application layer, we instrumented the API with Prometheus metrics including fish_api_requests_total (request counts), fish_api_errors_total (error tracking), and fish_api_prediction_latency_seconds (latency histograms). These metrics are exposed on the /metrics endpoint. We also implemented data drift detection by extracting image features (brightness, contrast, sharpness, color statistics) and logging predictions to a CSV database for monitoring input distribution changes. A /monitoring endpoint provides drift analysis reports. On the infrastructure layer, we set up GCP Cloud Monitoring dashboards and configured alert policies using a setup script that monitors CPU usage, memory consumption, and error rates. Monitoring helps ensure long-term reliability by detecting performance degradation, service anomalies, data drift, and resource exhaustion, enabling proactive intervention before issues impact users. ---
 
 ## Overall discussion of project
 
