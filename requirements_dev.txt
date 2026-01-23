@@ -20,4 +20,4 @@ mkdocstrings-python==1.16.10
 wandb==0.24.0
 
 # load testing
-locust==2.32.5
+locust==2.43.1
