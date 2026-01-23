@@ -298,9 +298,16 @@ For these reasons, we treat coverage as a useful diagnostic metric rather than a
 >
 > Answer:
 
---- We have organized our continuous integration into two GitHub Actions workflows: one focused on unit testing with coverage and one focused on linting/formatting. The main workflow (tests.yaml) runs on every push and pull request to main. It uses a matrix strategy across three operating systems (ubuntu‑latest, windows‑latest, macos‑latest) and two Python versions (3.11 and 3.12) so we can detect OS‑ and version‑specific issues early. The job installs dependencies, installs the package in editable mode, and runs our unit tests with pytest under coverage, reporting coverage at the end. It also disables W&B logging during CI to avoid external calls.
+--- Ecco una versione **allungata e più articolata**, intorno alle **200 parole**, mantenendo un tono tecnico e chiaro:
 
-We also maintain a separate linting.yaml workflow that runs ruff check and ruff format on ubuntu‑latest. This gives us a consistent formatting and linting gate that mirrors our local development rules. For dependency caching, we use the actions/setup-python pip cache in the test workflow, which speeds up repeated CI runs by reusing installed wheels and packages across jobs. Overall, the CI setup validates both code correctness (tests + coverage) and code quality (linting/formatting) before changes are merged.
+---
+
+We have structured our continuous integration (CI) pipeline into two separate GitHub Actions workflows to clearly distinguish between code correctness and code quality checks. The first and main workflow, tests.yaml, is dedicated to running the unit test suite with coverage and is triggered on every push and pull request targeting the main branch. This workflow uses a matrix strategy that spans three operating systems—ubuntu-latest, windows-latest, and macos-latest —and two Python versions, 3.11 and 3.12. This setup allows us to proactively detect operating system–specific and Python version–specific issues, ensuring broad compatibility across environments.
+
+Within each matrix job, dependencies are installed, the package is installed in editable mode, and unit tests are executed using pytest with coverage enabled. At the end of the run, coverage results are reported to provide visibility into test completeness. To keep CI runs deterministic and isolated, Weights & Biases (W&B) logging is explicitly disabled, preventing external network calls during automated testing. To improve performance, we leverage the pip caching mechanism provided by actions/setup-python, which significantly reduces runtime by reusing previously installed dependencies across jobs.
+
+In addition to testing, we maintain a separate linting.yaml workflow focused on static analysis and formatting. This workflow runs ruff check and ruff format on ubuntu-latest, enforcing a consistent style and linting standard that matches our local development configuration. Together, these workflows ensure that every change is validated for both functional correctness and code quality before being merged.
+
 
 An example workflow definition can be seen here: [tests.yaml](tests.yaml). ---
 
@@ -321,14 +328,9 @@ An example workflow definition can be seen here: [tests.yaml](tests.yaml). ---
 >
 > Answer:
 
---- We configured experiments using JSON configuration files and W&B sweeps to ensure reproducibility and systematic exploration.
-
-Training parameters can be overridden via a JSON file passed with the --config-path argparse argument, which defines settings such as the number of epochs, batch size, learning rate, weight decay. An example run looks like:
-python -m group_56.train --config-path configs/train_example.json
-For hyperparameter optimization, we define a sweep configuration in configs/sweep.yaml. The sweep is launched with:
-wandb sweep configs/sweep.yaml
-wandb agent sweep-id
-This setup ensures that all experiments are fully reproducible and automatically logged to Weights & Biases, with the exact configuration of each run stored and available for easy comparison and analysis at a later stage. ---
+---
+We configure experiments using JSON configuration files and W&B sweeps to ensure reproducibility and systematic exploration. Training parameters such as the number of epochs, batch size, learning rate, and weight decay can be overridden by passing a configuration file through the --config-path argument when launching training. For hyperparameter optimization, we define a sweep configuration in a dedicated YAML file and run it using Weights & Biases sweeps and agents. This approach ensures that all experiments are fully reproducible and automatically logged, with the exact configuration of each run stored and easily comparable at a later stage.
+---
 
 ### Question 13
 
@@ -366,7 +368,6 @@ In addition, every experiment is logged to Weights & Biases, where the complete 
 [IMAGE 1](figures/question_14_1.png)
 [IMAGE 2](figures/question_14_2.png)
 [IMAGE 3](figures/question_14_3.png)
-[IMAGE 4](figures/question_14_4.png)
 
 The screenshots show several experiments tracked using Weights & Biases (W&B), where we monitored the evolution of training loss, training accuracy, validation loss, and validation accuracy over multiple epochs. These metrics are fundamental for understanding both how well the model fits the training data and how effectively it generalizes to unseen samples.
 
@@ -448,7 +449,16 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- We used GCP Compute Engine indirectly via Vertex AI custom training jobs. Our training container (built from our train.dockerfile and stored in Artifact Registry) ran on Vertex AI-managed VMs, and the job pulled data from our GCS/DVC remote and logged metrics to W&B. ---
+--- Ecco una risposta **estesa a ~120–150 parole**, chiara e aderente alla traccia:
+
+---
+
+We made use of Google Cloud Compute Engine indirectly through Vertex AI custom training jobs, which abstract the management of virtual machines while still relying on Compute Engine as the underlying infrastructure. Instead of manually provisioning and maintaining VMs, we configured Vertex AI to spin up and manage the required Compute Engine instances for each training run.
+
+Our training workflow was container-based: we built a custom Docker image from our train.dockerfile and stored it in Artifact Registry. This container encapsulates all dependencies and training logic, ensuring consistency across runs. Vertex AI then deployed this container on managed Compute Engine VMs, selecting appropriate machine types depending on the training configuration.
+
+During execution, the training jobs accessed datasets stored in Google Cloud Storage, synchronized via DVC, and logged metrics, losses, and hyperparameters to Weights & Biases for experiment tracking. This setup allowed us to leverage the scalability and reliability of Compute Engine while avoiding low-level VM management, resulting in a reproducible and scalable training infrastructure.
+ ---
 
 ### Question 19
 
@@ -572,7 +582,8 @@ This setup let us share consistent environments across the team and made it stra
 >
 > Answer:
 
---- All the group members didn't use any credits since they used always free resources. Working with the cloud has been a little bit challenging due to the intricacies of the Google Cloud Console platform not being user-friendly. We had to grant a lot of permissions, adding Ids, secrets, and a couple of extra features not presented in the lecture to make it work. At the end not everything has been possible to work and we keep having some issues with the permissions for the cloud run. ---
+--- All group members were able to complete the project without using any paid credits, as we consistently relied on free-tier resources provided by Google Cloud. While this allowed us to stay within the available limits, working with the cloud environment proved to be somewhat challenging. In particular, the Google Cloud Console was not always intuitive or user-friendly, especially for users with limited prior experience. Setting up the infrastructure required managing a large number of permissions, service accounts, and IAM roles, as well as configuring IDs, secrets, and environment variables. Additionally, we had to enable and configure several features that were not explicitly covered during the lectures, which increased the overall complexity. Despite our efforts, not all components worked seamlessly in the end, and we continued to encounter persistent permission-related issues, especially when deploying and running services through Cloud Run.
+ ---
 
 ### Question 28
 
