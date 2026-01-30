@@ -17,7 +17,7 @@ mkdocs-material==9.6.1
 mkdocstrings-python==1.16.10
 
 # ml experiment tracking / tuning
-wandb==0.24.0
+wandb==0.24.1
 
 # load testing
 locust==2.32.5
