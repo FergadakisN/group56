@@ -67,7 +67,7 @@ dependencies = [
     "dvc-gs==3.0.2",
     "google-cloud-storage==2.19.0",
     "pydrive2==1.21.3",
-    "wandb==0.24.0",
+    "wandb==0.24.1",
 ]
 
 [project.optional-dependencies]
