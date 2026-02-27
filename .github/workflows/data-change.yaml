@@ -122,7 +122,7 @@ jobs:
             --split test
 
       - name: Upload model artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: retrained-model-${{ github.sha }}
           path: outputs/**/best.pt
