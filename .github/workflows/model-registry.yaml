@@ -79,7 +79,7 @@ jobs:
 
       - name: Summarize change
         if: steps.detect.outputs.model_path != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const changed = `${{ toJSON(steps.detect.outputs.changed_files || '') }}`.replace(/^"|"$/g, '');
